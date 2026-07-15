@@ -1,0 +1,33 @@
+{
+  "editor.tabSize": 2,
+  "editor.detectIndentation": false,
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  },
+  "editor.rulers": [80, 100],
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.exclude": {
+    "**/.git": true,
+    "**/build": true,
+    "**/node_modules": true,
+    "**/.dart_tool": true
+  },
+  "workbench.iconTheme": "material-icon-theme",
+  "workbench.startupEditor": "newUntitledFile",
+  "extensions.ignoreRecommendations": false,
+  "git.enableSmartCommit": true,
+  "telemetry.telemetryLevel": "off",
+  "editor.minimap.enabled": false,
+  "editor.quickSuggestionsDelay": 50,
+  "breadcrumbs.enabled": true,
+  "terminal.integrated.fontSize": 13,
+  "editor.formatOnPaste": false,
+  "editor.formatOnType": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[javascript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[dart]": { "editor.formatOnSave": true }
+}

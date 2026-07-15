@@ -1,0 +1,18 @@
+# Recommended extensions (one per line). Lines starting with # are ignored.
+eamodio.gitlens
+VisualStudioExptTeam.vscodeintellicode
+dbaeumer.vscode-eslint
+esbenp.prettier-vscode
+EditorConfig.EditorConfig
+christian-kohler.path-intellisense
+streetsidesoftware.code-spell-checker
+ms-azuretools.vscode-docker
+ms-vsliveshare.vsliveshare
+github.vscode-pull-request-github
+PKief.material-icon-theme
+yzhang.markdown-all-in-one
+humao.rest-client
+Dart-Code.dart-code
+Dart-Code.flutter
+wayou.vscode-todo-highlight
+coenraads.bracket-pair-colorizer-2

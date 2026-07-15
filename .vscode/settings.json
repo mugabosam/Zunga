@@ -1,0 +1,30 @@
+{
+  "files.exclude": {
+    "**/.gradle": true,
+    "**/build": true,
+    "**/.dart_tool": true,
+    "**/.pub": true,
+    "**/.packages": true,
+    "**/.idea": true
+  },
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": true,
+    "source.fixAll": true
+  },
+  "editor.defaultFormatter": "Dart-Code.dart-code",
+  "dart.flutterHotReloadOnSave": true,
+  "dart.previewHotReloadOnSave": true,
+  "dart.showTodos": true,
+  "dart.analyzeExcludedFolders": ["android", "ios"],
+  "dart.debugExternalLibraries": false,
+  "dart.debugSdkLibraries": false,
+  "editor.tabSize": 2,
+  "editor.detectIndentation": false,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "git.enableSmartCommit": true,
+  "git.autofetch": true,
+  "breadcrumbs.enabled": true,
+  "terminal.integrated.defaultProfile.windows": "PowerShell"
+}
