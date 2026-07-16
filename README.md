@@ -1,59 +1,54 @@
 # Zunga
 
-**One app for every payment in Rwanda.** MTN MoMo, Airtel Money, banks via eKash, bills, government payments, ikimina and merchant tools — a pure interface layer over the user's **own USSD sessions on their own SIM**. Money never touches Zunga servers (Faranga model; no PSP/EMI license needed at launch).
+**Stop typing the `*` strings.** Zunga is a USSD shortcut layer for payments in Rwanda: enter the amount and a phone number or MoMo Pay code in a clean UI, tap Pay, and land in your phone's dialer with the right code prefilled — press call and type only your carrier PIN. **Zunga never holds, moves, or sees money.** The transfer happens entirely inside your carrier's own USSD session, and every fee you see there is the carrier's or eKash's, never Zunga's.
 
-- **Build spec:** [ZUNGA_BUILD.md](ZUNGA_BUILD.md) — architecture, security spec, staging, Play compliance.
-- **Design system:** [zunga-ui.html](zunga-ui.html) — 22 screens, near-monochrome, one accent `#0E6E5C`, Inter + IBM Plex Mono, tabular numerals.
+- **Build spec:** [ZUNGA_BUILD.md](ZUNGA_BUILD.md) · **Design system:** [zunga-ui.html](zunga-ui.html)
 
-## How the rails actually work (verified July 2026)
+## The codes it dials (verified July 2026)
 
-- **eKash is the national interoperability rail**, operated by RSwitch. Since **14 July 2026** (BNR **Directive No. 45/2026**) all domestic interoperable retail payments between banks and e-money issuers route through eKash — fee **capped at 20 RWF**, up to **10M RWF** per transaction, settlement under 15 s.
-- **`*182*1*2#` is the cross-network send code and works from any network** (confirmed by Airtel Rwanda & Airtel Money Rwanda). Recipient phone number = eKash ID; the carrier shows the registered name before PIN confirmation.
-- **The standalone eKash *wallet* is being phased out** — do not surface `*182*11#` (old wallet activation). Users transact through their own carrier/bank channel; eKash routes underneath.
-- Carrier roots: MTN MoMo `*182#`, Airtel Money `*500#`. Bank USSD shortcodes are intentionally **not** hardcoded — they change without notice and are verified per bank during Stage 3 field testing.
-- Deep menu trees ship as **Ed25519-signed, remotely-updatable JSON** ([assets/configs/menu_configs.json](assets/configs/menu_configs.json)); anything not yet confirmed on a live SIM carries `requires_field_verification: true` and the engine **fails closed** (manual dial is always offered).
+| You want to | Zunga dials |
+| --- | --- |
+| Send MTN → MTN | `*182*1*1*number*amount#` (only the PIN left) |
+| Send MTN ↔ Airtel (either direction) | `*182*1*2#` — eKash, works from any network |
+| Pay a merchant (MoMo Pay) | `*182*8*1*code#` |
+| Airtel → Airtel | `*500#` (Airtel Money menu) |
+| Send from a bank via eKash | that bank's own access code (table below) |
+
+Full eKash access-code table shipped in-app and in the signed config: MTN MoMo / Airtel Money `*182*1*2#`, Bank of Kigali `*334*2*4#`, Equity `*555*2#`, GT Bank `*600*7*2#`, Bank of Africa `*512*2*2#`, Copedu `*866*3#`, I&M `*227*4*3#`, Ecobank `*883*8*1#`, Zigama CSS `*139*5*3#`, AB Bank `*540*2*3#`, Umwalimu Sacco `*175*3#`, BPR `*150*3*4#`, LOLC Unguka `*951*4#`, Access Bank `*903*3*5#`, Letshego `*598*1*3#`, Mvend `*737*1*2#`, NCBA `*650*1*2#`, Jali `*655*8*3#` (Chipper Cash is app-only).
+
+Context: eKash is the national interoperability rail (RSwitch); since 14 July 2026 (BNR Directive No. 45/2026) all domestic interoperable retail payments route through it — fee capped at 20 RWF, up to 10M RWF per transaction. The old standalone eKash wallet (`*182*11#`) is phased out and never surfaced.
+
+## Design decisions
+
+- **No app PIN, no onboarding wall.** Zunga stores no money and no secrets — the only PIN that matters is your carrier's, typed in the carrier's own dialog.
+- **Hand-off, not automation.** Pay buttons open the dialer via `ACTION_DIAL` with the full code visible; the user always presses call themselves. No permission needed, nothing fires blind.
+- **No fake data.** No mock balances, contacts, or transactions. The activity tab is an honest empty state until on-device SMS tracking ships (parser already in `lib/insights/`, allowlisted senders only, nothing leaves the phone).
+- **Codes are data.** Dial codes ship as Ed25519-signed JSON (`assets/configs/`) with a pinned key and rollback protection, so a changed carrier menu is fixed remotely — no app update. Inline templates (`*182*1*1*{msisdn}*{amount}#`) are confirmed on live SIMs and correctable the same way.
 
 ## Project layout
 
 ```text
 lib/
-  core/        theme (design tokens), router, widgets kit, l10n, sample data
-  security/    Argon2id app PIN, session lock (60 s), secure storage
-  ussd/        engine, signed-config pipeline, menu-tree models, pinned key
-  insights/    on-device SMS parser (allowlisted senders only)
-  features/    home, send, pay, bills, accounts, merchant_pay, government,
-               tools (split/ikimina/scheduled), merchant_mode, settings,
-               onboarding + lock — all 22 design screens
-android/
-  .../rw/zunga UssdChannel.kt (sendUssdRequest, dual-SIM, manual dial),
-               ZungaAccessibilityService.kt (bound ONLY to com.android.phone)
-tool/          sign_config.dart — dev Ed25519 signer (prod key is offline)
+  core/        theme tokens, router, widget kit, locale, eKash directory
+  ussd/        engine (dial hand-off, dual-SIM), signed-config pipeline
+  insights/    on-device SMS parser (future activity feed)
+  features/    home, send (amount → number-or-code → dialer), pay hub,
+               bills, bank transfer, eKash codes directory, government,
+               profile
+android/.../rw/zunga   UssdChannel.kt, ZungaAccessibilityService.kt (future
+                       deep automation, scoped to com.android.phone)
+tool/sign_config.dart  dev Ed25519 signer (prod key stays offline)
 ```
 
 ## Getting started
 
 ```bash
 flutter pub get
-dart run tool/sign_config.dart   # generates dev key + signs the menu config
-flutter run                      # Android device/emulator (minSdk 26)
-flutter test                     # 18 tests: config integrity, routing, SMS parser
+dart run tool/sign_config.dart   # generate dev key + sign the code table
+flutter run                      # Android, minSdk 26
+flutter test                     # 23 tests: codes, routing, signatures, SMS parser
 ```
-
-`tool/dev_key.json` is git-ignored; each checkout generates its own dev signing key and re-pins it. The production signing key never enters this repository.
-
-## Security invariants (enforced, not aspirational)
-
-- Carrier/bank PINs: in-memory only, zeroed after injection, never persisted or logged — **CI greps `lib/ussd` and `lib/security` and fails the build on any logger call**.
-- App PIN: Argon2id (32 MiB, 3 iters), salted, secure storage; 5 fails → doubling backoff.
-- Configs: Ed25519 signature + monotonic version (no rollback), key pinned in binary.
-- `FLAG_SECURE` on every screen; `allowBackup=false`; cleartext traffic rejected.
-- Accessibility service scope locked to the carrier USSD dialog package.
-- Scam interstitial: **Cancel is always the primary action**; name-check failure blocks by default.
 
 ## Localization
 
-Kinyarwanda (default when device is `rw`), English, Français — `lib/l10n/app_*.arb`. Carrier-string matching in menu configs carries all three languages because the USSD menu language follows the SIM, not the app.
-
-## Status
-
-Stage 1–2 skeleton: design system, all 22 screens, USSD engine + signed config pipeline, security shell, sample data. Next per [ZUNGA_BUILD.md](ZUNGA_BUILD.md) §5: Supabase config distribution, SMS reconciliation, Kigali field verification of every flagged menu tree.
+Kinyarwanda (default when device is `rw`), English, Français — `lib/l10n/app_*.arb`.

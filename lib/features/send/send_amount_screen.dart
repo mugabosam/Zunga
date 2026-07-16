@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/data/sample_data.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/widgets/kit.dart';
 import '../../core/widgets/scaffold.dart';
 import '../../l10n/app_localizations.dart';
 import 'send_flow_state.dart';
 
-/// Screen 03 — Send · amount.
+/// Send · step 1: how much, and from which SIM.
 class SendAmountScreen extends ConsumerStatefulWidget {
   const SendAmountScreen({super.key});
 
@@ -26,42 +25,11 @@ class _SendAmountScreenState extends ConsumerState<SendAmountScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final flow = ref.watch(sendFlowProvider);
-    final momo = ref
-        .watch(linkedAccountsProvider)
-        .firstWhere((a) => a.provider == flow.sourceProvider);
 
     return Scaffold(
       appBar: zAppBar(context, title: l.sendMoney),
       body: Column(
         children: [
-          // Recipient chip
-          Container(
-            margin: const EdgeInsets.only(top: 6),
-            padding: const EdgeInsets.fromLTRB(8, 7, 16, 7),
-            decoration: BoxDecoration(
-              color: ZTokens.surface,
-              border: Border.all(color: ZTokens.line),
-              borderRadius: BorderRadius.circular(ZTokens.radiusPill),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AvatarBox(
-                  (flow.recipientName ?? flow.recipientMsisdn ?? '?')
-                      .split(RegExp(r'\s+'))
-                      .take(2)
-                      .map((w) => w.isEmpty ? '' : w[0].toUpperCase())
-                      .join(),
-                  size: 30,
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  flow.recipientName ?? flow.recipientMsisdn ?? '',
-                  style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -86,23 +54,15 @@ class _SendAmountScreenState extends ConsumerState<SendAmountScreen> {
                     color: ZTokens.ink3,
                   ),
                 ),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: ZTokens.surface,
-                    border: Border.all(color: ZTokens.line),
-                    borderRadius: BorderRadius.circular(ZTokens.radiusPill),
-                  ),
-                  child: Text(
-                    '${l.from} ${momo.provider} · ${rwf(momo.lastBalance ?? 0)} RWF',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: ZTokens.ink2,
-                      fontFeatures: ZTokens.numFeatures,
-                    ),
-                  ),
+                const SizedBox(height: 18),
+                // Sending from which SIM — decides *182*1*1# vs eKash.
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _sourceChip(l, SourceNetwork.mtn, 'MTN MoMo', flow.source),
+                    const SizedBox(width: 8),
+                    _sourceChip(l, SourceNetwork.airtel, 'Airtel Money', flow.source),
+                  ],
                 ),
               ],
             ),
@@ -123,13 +83,37 @@ class _SendAmountScreenState extends ConsumerState<SendAmountScreen> {
               onPressed: _amount > 0
                   ? () {
                       ref.read(sendFlowProvider.notifier).setAmount(_amount);
-                      context.push('/send/confirm');
+                      context.push('/send/target');
                     }
                   : null,
-              child: Text(l.continueLabel),
+              child: Text(l.pay),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _sourceChip(
+      AppLocalizations l, SourceNetwork network, String label, SourceNetwork current) {
+    final on = network == current;
+    return GestureDetector(
+      onTap: () => ref.read(sendFlowProvider.notifier).setSource(network),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+        decoration: BoxDecoration(
+          color: on ? ZTokens.ink : ZTokens.surface,
+          border: Border.all(color: on ? ZTokens.ink : ZTokens.line),
+          borderRadius: BorderRadius.circular(ZTokens.radiusPill),
+        ),
+        child: Text(
+          '${l.from} $label',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: on ? Colors.white : ZTokens.ink2,
+          ),
+        ),
       ),
     );
   }

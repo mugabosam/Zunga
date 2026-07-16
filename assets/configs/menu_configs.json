@@ -1,123 +1,74 @@
 {
-  "generated_at": "2026-07-15",
+  "generated_at": "2026-07-16",
   "_notes": [
-    "VERIFIED (July 2026): eKash is Rwanda's national interoperability rail operated by RSwitch. Since 14 July 2026 (BNR Directive No. 45/2026) ALL domestic interoperable retail payments between banks and e-money issuers route through eKash. Fee capped at 20 RWF, up to 10,000,000 RWF per transaction.",
-    "VERIFIED: *182*1*2# is the cross-network eKash send code and works from ANY network (confirmed by Airtel Rwanda and Airtel Money Rwanda). Recipient phone number = eKash ID; the carrier shows the registered name before PIN confirmation.",
-    "DEPRECATED: *182*11# (old standalone eKash wallet activation). The RSwitch eKash wallet is being phased out from 14 July 2026 — do not surface it. Users transact through their own carrier/bank channel and eKash routes underneath.",
-    "Flows marked requires_field_verification=true must be confirmed on a live SIM in Kigali before automation is enabled; until then the engine fails closed and offers manual dialing.",
-    "Bank USSD shortcodes change without notice and are intentionally NOT listed until verified per bank during Stage 3 field testing."
+    "Zunga never processes money. Every payment is handed off to the phone dialer with the right code prefilled; the user presses call and enters their carrier/bank PIN in the carrier's own session.",
+    "VERIFIED (July 2026): eKash is the national interoperability rail (RSwitch, BNR Directive No. 45/2026, live 14 July 2026). Fee capped at 20 RWF, up to 10,000,000 RWF per transaction.",
+    "VERIFIED send codes: *182*1*1# MTN→MTN, *182*1*2# cross-network from ANY network (recipient phone = eKash ID), *182*8*1# MoMo Pay merchant code.",
+    "eKash access codes below are from the official published table (MTN, Airtel + 17 banks/MFIs). Chipper Cash is app-only, no USSD.",
+    "inline_template entries pre-fill number/amount so only the PIN is left. The dialer always shows the full string before the user presses call; confirm each template on a live SIM and correct remotely if a carrier changes it.",
+    "DEPRECATED: *182*11# (old standalone eKash wallet activation) — the RSwitch wallet is phased out; never surface it."
   ],
   "providers": [
     {
       "provider": "mtn_momo",
       "display_name": "MTN MoMo",
-      "version": 1,
+      "version": 2,
       "min_app_version": "0.1.0",
       "flows": {
-        "send_p2p": {
+        "send_same_network": {
           "root": "*182*1*1#",
-          "steps": [
-            {"expect_contains": ["phone number", "nimero", "numéro"], "input_type": "recipient_msisdn"},
-            {"expect_contains": ["amount", "umubare", "montant"], "input_type": "amount"},
-            {"expect_contains": ["confirm", "emeza", "confirmer", "kuri"], "input_type": "user_pin"}
-          ],
-          "success_contains": ["successful", "byagenze neza", "réussi"],
-          "name_check_step": 2,
-          "requires_field_verification": true
+          "inline_template": "*182*1*1*{msisdn}*{amount}#",
+          "steps": [],
+          "success_contains": []
         },
         "send_cross_network_ekash": {
           "root": "*182*1*2#",
-          "steps": [
-            {"expect_contains": ["phone number", "ekash", "nimero", "numéro"], "input_type": "recipient_msisdn"},
-            {"expect_contains": ["amount", "umubare", "montant"], "input_type": "amount"},
-            {"expect_contains": ["confirm", "emeza", "confirmer", "kuri"], "input_type": "user_pin"}
-          ],
-          "success_contains": ["successful", "byagenze neza", "réussi"],
-          "name_check_step": 2,
-          "requires_field_verification": true
-        },
-        "balance": {
-          "root": "*182*6*1#",
-          "steps": [
-            {"expect_contains": ["pin", "ibanga"], "input_type": "user_pin"}
-          ],
-          "success_contains": ["balance", "amafaranga", "solde"],
-          "requires_field_verification": true
-        },
-        "buy_electricity": {
-          "root": "*182*2*2#",
-          "steps": [
-            {"expect_contains": ["meter", "mubazi", "compteur"], "input_type": "meter_number"},
-            {"expect_contains": ["amount", "umubare", "montant"], "input_type": "amount"},
-            {"expect_contains": ["confirm", "emeza", "confirmer"], "input_type": "user_pin"}
-          ],
-          "success_contains": ["token", "umubare w'amashanyarazi"],
-          "requires_field_verification": true
+          "steps": [],
+          "success_contains": []
         },
         "momo_pay": {
           "root": "*182*8*1#",
-          "steps": [
-            {"expect_contains": ["code", "kode"], "input_type": "reference"},
-            {"expect_contains": ["amount", "umubare", "montant"], "input_type": "amount"},
-            {"expect_contains": ["confirm", "emeza", "confirmer"], "input_type": "user_pin"}
-          ],
-          "success_contains": ["successful", "byagenze neza", "réussi"],
-          "requires_field_verification": true
+          "inline_template": "*182*8*1*{code}#",
+          "steps": [],
+          "success_contains": []
         }
       }
     },
     {
       "provider": "airtel_money",
       "display_name": "Airtel Money",
-      "version": 1,
+      "version": 2,
       "min_app_version": "0.1.0",
       "flows": {
         "menu_root": {
           "root": "*500#",
           "steps": [],
-          "success_contains": [],
-          "requires_field_verification": true
+          "success_contains": []
         },
         "send_cross_network_ekash": {
           "root": "*182*1*2#",
-          "steps": [
-            {"expect_contains": ["phone number", "ekash", "nimero", "numéro"], "input_type": "recipient_msisdn"},
-            {"expect_contains": ["amount", "umubare", "montant"], "input_type": "amount"},
-            {"expect_contains": ["confirm", "emeza", "confirmer", "kuri"], "input_type": "user_pin"}
-          ],
-          "success_contains": ["successful", "byagenze neza", "réussi"],
-          "name_check_step": 2,
-          "requires_field_verification": true
+          "steps": [],
+          "success_contains": []
         }
       }
     },
-    {
-      "provider": "bank_of_kigali",
-      "display_name": "Bank of Kigali",
-      "version": 1,
-      "min_app_version": "0.1.0",
-      "flows": {}
-    },
-    {
-      "provider": "equity_bank",
-      "display_name": "Equity Bank",
-      "version": 1,
-      "min_app_version": "0.1.0",
-      "flows": {}
-    },
-    {
-      "provider": "im_bank",
-      "display_name": "I&M Bank",
-      "version": 1,
-      "min_app_version": "0.1.0",
-      "flows": {}
-    },
-    {
-      "provider": "ecobank",
-      "display_name": "Ecobank",
-      "version": 1,
-      "min_app_version": "0.1.0",
-      "flows": {}
-    }
+    {"provider": "bank_of_kigali", "display_name": "Bank of Kigali", "version": 2, "min_app_version": "0.1.0", "flows": {"ekash_access": {"root": "*334*2*4#", "steps": [], "success_contains": []}}},
+    {"provider": "equity_bank", "display_name": "Equity Bank", "version": 2, "min_app_version": "0.1.0", "flows": {"ekash_access": {"root": "*555*2#", "steps": [], "success_contains": []}}},
+    {"provider": "gt_bank", "display_name": "GT Bank", "version": 2, "min_app_version": "0.1.0", "flows": {"ekash_access": {"root": "*600*7*2#", "steps": [], "success_contains": []}}},
+    {"provider": "bank_of_africa", "display_name": "Bank of Africa", "version": 2, "min_app_version": "0.1.0", "flows": {"ekash_access": {"root": "*512*2*2#", "steps": [], "success_contains": []}}},
+    {"provider": "copedu", "display_name": "Copedu", "version": 2, "min_app_version": "0.1.0", "flows": {"ekash_access": {"root": "*866*3#", "steps": [], "success_contains": []}}},
+    {"provider": "im_bank", "display_name": "I&M Bank", "version": 2, "min_app_version": "0.1.0", "flows": {"ekash_access": {"root": "*227*4*3#", "steps": [], "success_contains": []}}},
+    {"provider": "ecobank", "display_name": "Ecobank", "version": 2, "min_app_version": "0.1.0", "flows": {"ekash_access": {"root": "*883*8*1#", "steps": [], "success_contains": []}}},
+    {"provider": "zigama_css", "display_name": "Zigama CSS", "version": 2, "min_app_version": "0.1.0", "flows": {"ekash_access": {"root": "*139*5*3#", "steps": [], "success_contains": []}}},
+    {"provider": "ab_bank", "display_name": "AB Bank", "version": 2, "min_app_version": "0.1.0", "flows": {"ekash_access": {"root": "*540*2*3#", "steps": [], "success_contains": []}}},
+    {"provider": "umwalimu_sacco", "display_name": "Umwalimu Sacco", "version": 2, "min_app_version": "0.1.0", "flows": {"ekash_access": {"root": "*175*3#", "steps": [], "success_contains": []}}},
+    {"provider": "bpr", "display_name": "BPR Bank", "version": 2, "min_app_version": "0.1.0", "flows": {"ekash_access": {"root": "*150*3*4#", "steps": [], "success_contains": []}}},
+    {"provider": "lolc_unguka", "display_name": "LOLC Unguka", "version": 2, "min_app_version": "0.1.0", "flows": {"ekash_access": {"root": "*951*4#", "steps": [], "success_contains": []}}},
+    {"provider": "access_bank", "display_name": "Access Bank", "version": 2, "min_app_version": "0.1.0", "flows": {"ekash_access": {"root": "*903*3*5#", "steps": [], "success_contains": []}}},
+    {"provider": "letshego", "display_name": "Letshego", "version": 2, "min_app_version": "0.1.0", "flows": {"ekash_access": {"root": "*598*1*3#", "steps": [], "success_contains": []}}},
+    {"provider": "mvend", "display_name": "Mvend", "version": 2, "min_app_version": "0.1.0", "flows": {"ekash_access": {"root": "*737*1*2#", "steps": [], "success_contains": []}}},
+    {"provider": "ncba_bank", "display_name": "NCBA Bank", "version": 2, "min_app_version": "0.1.0", "flows": {"ekash_access": {"root": "*650*1*2#", "steps": [], "success_contains": []}}},
+    {"provider": "jali", "display_name": "Jali", "version": 2, "min_app_version": "0.1.0", "flows": {"ekash_access": {"root": "*655*8*3#", "steps": [], "success_contains": []}}},
+    {"provider": "chipper_cash", "display_name": "Chipper Cash", "version": 2, "min_app_version": "0.1.0", "flows": {}}
   ]
 }

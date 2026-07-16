@@ -50,6 +50,7 @@ class UssdFlow {
     required this.root,
     required this.steps,
     required this.successContains,
+    this.inlineTemplate,
     this.nameCheckStep,
     this.requiresFieldVerification = false,
   });
@@ -58,6 +59,31 @@ class UssdFlow {
 
   /// The root code dialed to start this flow, e.g. `*182#` or `*182*1*2#`.
   final String root;
+
+  /// Optional dial string with `{msisdn}`, `{amount}` or `{code}`
+  /// placeholders — pre-fills the carrier session so only the PIN is
+  /// left. The dialer always shows the composed string before the user
+  /// presses call.
+  final String? inlineTemplate;
+
+  /// Fills the inline template, falling back to the root code when no
+  /// template is configured or a placeholder has no value.
+  String dialString({String? msisdn, int? amount, String? code}) {
+    final template = inlineTemplate;
+    if (template == null) return root;
+    var filled = template;
+    final values = {
+      '{msisdn}': msisdn,
+      '{amount}': amount?.toString(),
+      '{code}': code,
+    };
+    for (final entry in values.entries) {
+      if (!filled.contains(entry.key)) continue;
+      if (entry.value == null || entry.value!.isEmpty) return root;
+      filled = filled.replaceAll(entry.key, entry.value!);
+    }
+    return filled;
+  }
   final List<UssdStep> steps;
   final List<String> successContains;
 
@@ -71,6 +97,7 @@ class UssdFlow {
   factory UssdFlow.fromJson(String id, Map<String, dynamic> json) => UssdFlow(
         id: id,
         root: json['root'] as String,
+        inlineTemplate: json['inline_template'] as String?,
         steps: (json['steps'] as List? ?? const [])
             .map((s) => UssdStep.fromJson(s as Map<String, dynamic>))
             .toList(),

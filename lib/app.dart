@@ -5,9 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/l10n/locale_provider.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/theme.dart';
-import 'features/onboarding/lock_screen.dart';
 import 'l10n/app_localizations.dart';
-import 'security/app_lock.dart';
 
 class ZungaApp extends ConsumerWidget {
   const ZungaApp({super.key});
@@ -16,7 +14,6 @@ class ZungaApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
     final locale = ref.watch(localeProvider);
-    final locked = ref.watch(appLockProvider);
 
     return MaterialApp.router(
       title: 'Zunga',
@@ -31,15 +28,6 @@ class ZungaApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       routerConfig: router,
-      builder: (context, child) {
-        // Session lock overlays the whole app after 60 s in background.
-        return Stack(
-          children: [
-            child ?? const SizedBox.shrink(),
-            if (locked) const LockScreen(),
-          ],
-        );
-      },
     );
   }
 }

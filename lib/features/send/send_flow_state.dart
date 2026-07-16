@@ -1,68 +1,84 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/data/models.dart';
+/// The whole product in one file: turn what the user typed into the
+/// right USSD dial string, then hand off to the phone dialer where the
+/// carrier session asks for their PIN. Zunga never touches the money.
+///
+/// Codes (verified, July 2026):
+///  - MTN → MTN:            *182*1*1#   (inline: *182*1*1*number*amount#)
+///  - Cross-network (eKash): *182*1*2#   — works from ANY network
+///  - MoMo Pay merchant:     *182*8*1#   (inline: *182*8*1*code#)
+///  - Airtel Money menu:     *500#
+enum PayTarget { phoneNumber, merchantCode }
 
-/// Routes a transfer can take. Same-network sends use the carrier tree;
-/// anything cross-network or bank↔wallet rides eKash (*182*1*2#, the
-/// national rail — verified July 2026, fee capped at 20 RWF).
-enum TransferRoute { momoToMomo, airtelToAirtel, ekashCrossNetwork }
+enum SourceNetwork { mtn, airtel }
 
 class SendFlowState {
   const SendFlowState({
-    this.recipientName,
-    this.recipientMsisdn,
-    this.recipientNetwork,
     this.amount = 0,
-    this.sourceProvider = 'MTN MoMo',
-    this.scamReported = false,
+    this.target = PayTarget.phoneNumber,
+    this.source = SourceNetwork.mtn,
+    this.recipientMsisdn = '',
+    this.merchantCode = '',
   });
 
-  final String? recipientName;
-  final String? recipientMsisdn;
-  final String? recipientNetwork;
   final int amount;
-  final String sourceProvider;
+  final PayTarget target;
+  final SourceNetwork source;
+  final String recipientMsisdn;
+  final String merchantCode;
 
-  /// Set when the recipient number matches the scam DB (screen 20).
-  final bool scamReported;
+  String? get recipientNetwork => detectNetwork(recipientMsisdn);
 
-  TransferRoute get route {
-    final fromMtn = sourceProvider.contains('MTN');
-    final toMtn = recipientNetwork == 'MTN';
-    if (fromMtn && toMtn) return TransferRoute.momoToMomo;
-    if (!fromMtn && !toMtn && recipientNetwork == 'Airtel') {
-      return TransferRoute.airtelToAirtel;
-    }
-    return TransferRoute.ekashCrossNetwork;
+  bool get isCrossNetwork {
+    final to = recipientNetwork;
+    if (to == null) return false;
+    return (source == SourceNetwork.mtn) != (to == 'MTN');
   }
 
-  String get routeLabel => switch (route) {
-        TransferRoute.momoToMomo => 'MoMo → MoMo',
-        TransferRoute.airtelToAirtel => 'Airtel → Airtel',
-        TransferRoute.ekashCrossNetwork => 'via eKash',
-      };
+  /// The exact string handed to the dialer. Shown to the user verbatim
+  /// before they press call.
+  String get dialCode {
+    if (target == PayTarget.merchantCode) {
+      // MoMo Pay: signage format *182*8*1*code# pre-fills the code.
+      return merchantCode.isEmpty ? '*182*8*1#' : '*182*8*1*$merchantCode#';
+    }
+    final digits = recipientMsisdn.replaceAll(RegExp(r'\D'), '');
+    if (isCrossNetwork) {
+      // eKash cross-network send — dialable from any network. The eKash
+      // session asks for recipient and amount itself.
+      return '*182*1*2#';
+    }
+    if (source == SourceNetwork.airtel) {
+      // Airtel → Airtel goes through the Airtel Money menu.
+      return '*500#';
+    }
+    // MTN → MTN inline shortcut leaves only the PIN to type.
+    if (digits.isNotEmpty && amount > 0) {
+      return '*182*1*1*$digits*$amount#';
+    }
+    return '*182*1*1#';
+  }
 
-  /// eKash interoperable fee is capped at 20 RWF (BNR Directive 45/2026);
-  /// on-net carrier fees are tariff-table lookups — 100 RWF placeholder
-  /// until the tariff table ships with the signed config.
-  int get fee =>
-      route == TransferRoute.ekashCrossNetwork ? 20 : (amount > 0 ? 100 : 0);
+  String get routeLabel {
+    if (target == PayTarget.merchantCode) return 'MoMo Pay';
+    if (isCrossNetwork) return 'via eKash';
+    return source == SourceNetwork.mtn ? 'MTN → MTN' : 'Airtel → Airtel';
+  }
 
   SendFlowState copyWith({
-    String? recipientName,
-    String? recipientMsisdn,
-    String? recipientNetwork,
     int? amount,
-    String? sourceProvider,
-    bool? scamReported,
+    PayTarget? target,
+    SourceNetwork? source,
+    String? recipientMsisdn,
+    String? merchantCode,
   }) {
     return SendFlowState(
-      recipientName: recipientName ?? this.recipientName,
-      recipientMsisdn: recipientMsisdn ?? this.recipientMsisdn,
-      recipientNetwork: recipientNetwork ?? this.recipientNetwork,
       amount: amount ?? this.amount,
-      sourceProvider: sourceProvider ?? this.sourceProvider,
-      scamReported: scamReported ?? this.scamReported,
+      target: target ?? this.target,
+      source: source ?? this.source,
+      recipientMsisdn: recipientMsisdn ?? this.recipientMsisdn,
+      merchantCode: merchantCode ?? this.merchantCode,
     );
   }
 }
@@ -71,23 +87,15 @@ class SendFlowNotifier extends Notifier<SendFlowState> {
   @override
   SendFlowState build() => const SendFlowState();
 
-  void selectContact(Contact contact) {
-    state = state.copyWith(
-      recipientName: contact.name,
-      recipientMsisdn: contact.msisdn,
-      recipientNetwork: contact.network,
-    );
-  }
-
-  void setManualNumber(String msisdn, {required String network}) {
-    state = state.copyWith(
-      recipientName: null,
-      recipientMsisdn: msisdn,
-      recipientNetwork: network,
-    );
-  }
-
   void setAmount(int amount) => state = state.copyWith(amount: amount);
+
+  void setTarget(PayTarget target) => state = state.copyWith(target: target);
+
+  void setSource(SourceNetwork source) => state = state.copyWith(source: source);
+
+  void setNumber(String msisdn) => state = state.copyWith(recipientMsisdn: msisdn);
+
+  void setMerchantCode(String code) => state = state.copyWith(merchantCode: code);
 
   void reset() => state = const SendFlowState();
 }

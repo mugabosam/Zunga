@@ -21,24 +21,57 @@ void main() {
     });
   });
 
-  group('Transfer routing', () {
-    test('MTN → MTN stays on-network', () {
+  group('Dial code selection — the codes the user actually dials', () {
+    test('MTN → MTN pre-fills number and amount, leaving only the PIN', () {
       const s = SendFlowState(
-        sourceProvider: 'MTN MoMo',
-        recipientNetwork: 'MTN',
-        amount: 12500,
+        source: SourceNetwork.mtn,
+        recipientMsisdn: '0788412903',
+        amount: 5000,
       );
-      expect(s.route, TransferRoute.momoToMomo);
+      expect(s.dialCode, '*182*1*1*0788412903*5000#');
     });
 
-    test('MTN → Airtel rides eKash with the capped 20 RWF fee', () {
+    test('MTN → Airtel routes through eKash *182*1*2#', () {
       const s = SendFlowState(
-        sourceProvider: 'MTN MoMo',
-        recipientNetwork: 'Airtel',
-        amount: 30000,
+        source: SourceNetwork.mtn,
+        recipientMsisdn: '0733208517',
+        amount: 5000,
       );
-      expect(s.route, TransferRoute.ekashCrossNetwork);
-      expect(s.fee, 20, reason: 'BNR Directive 45/2026 caps eKash fees at 20 RWF');
+      expect(s.isCrossNetwork, isTrue);
+      expect(s.dialCode, '*182*1*2#');
+    });
+
+    test('Airtel → MTN also routes through eKash *182*1*2#', () {
+      const s = SendFlowState(
+        source: SourceNetwork.airtel,
+        recipientMsisdn: '0788412903',
+        amount: 5000,
+      );
+      expect(s.isCrossNetwork, isTrue);
+      expect(s.dialCode, '*182*1*2#');
+    });
+
+    test('Airtel → Airtel opens the Airtel Money menu *500#', () {
+      const s = SendFlowState(
+        source: SourceNetwork.airtel,
+        recipientMsisdn: '0733208517',
+        amount: 5000,
+      );
+      expect(s.dialCode, '*500#');
+    });
+
+    test('MoMo Pay merchant code pre-fills *182*8*1*code#', () {
+      const s = SendFlowState(
+        target: PayTarget.merchantCode,
+        merchantCode: '048812',
+        amount: 3000,
+      );
+      expect(s.dialCode, '*182*8*1*048812#');
+    });
+
+    test('MoMo Pay without a code falls back to the bare menu', () {
+      const s = SendFlowState(target: PayTarget.merchantCode);
+      expect(s.dialCode, '*182*8*1#');
     });
   });
 }

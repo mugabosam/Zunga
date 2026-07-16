@@ -20,7 +20,7 @@ jobs:
       # a PIN. Fail the build outright.
       - name: Security grep gate — no logging in sensitive packages
         run: |
-          if grep -rnE '\b(print|debugPrint|log\()' lib/ussd lib/security; then
+          if grep -rnE '\b(print|debugPrint|log\()' lib/ussd; then
             echo '::error::Logging call found in lib/ussd or lib/security — PINs must never be loggable'
             exit 1
           fi

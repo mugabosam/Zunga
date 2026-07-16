@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/data/sample_data.dart';
 import '../../core/widgets/kit.dart';
 import '../../core/widgets/scaffold.dart';
 import '../../l10n/app_localizations.dart';
+import '../../ussd/providers.dart';
+import '../send/send_flow_state.dart';
 
-/// Screen 09 — Pay hub: every service, grouped.
-class PayHubScreen extends StatelessWidget {
+/// Pay hub — every real service, each one ending in a dialer hand-off.
+class PayHubScreen extends ConsumerWidget {
   const PayHubScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
+
+    void dial(String code) => ref.read(ussdEngineProvider).dialManually(code);
+
     return Scaffold(
       body: SafeArea(
         child: ListView(
@@ -23,41 +30,41 @@ class PayHubScreen extends StatelessWidget {
               BillRow(
                 icon: Icons.arrow_forward,
                 title: l.sendToMobile,
-                subtitle: 'MTN MoMo · Airtel Money',
-                onTap: () => context.push('/send'),
-              ),
-              BillRow(
-                icon: Icons.account_balance_outlined,
-                title: l.bankTransferEkash,
-                subtitle: 'Any bank ↔ any wallet, instant',
-                onTap: () => context.push('/bank-transfer'),
+                subtitle: '*182*1*1# same network · *182*1*2# cross-network',
+                onTap: () {
+                  ref.read(sendFlowProvider.notifier).setTarget(PayTarget.phoneNumber);
+                  context.push('/send');
+                },
               ),
               BillRow(
                 icon: Icons.storefront_outlined,
                 title: l.payMerchant,
-                subtitle: 'MoMo Pay code · nearby suggestions',
-                onTap: () => context.push('/merchant-pay'),
+                subtitle: 'MoMo Pay · *182*8*1#',
+                onTap: () {
+                  ref.read(sendFlowProvider.notifier).setTarget(PayTarget.merchantCode);
+                  context.push('/send');
+                },
+              ),
+              BillRow(
+                icon: Icons.account_balance_outlined,
+                title: l.bankTransferEkash,
+                subtitle: 'Any bank ↔ any wallet, fee capped at 20 RWF',
+                onTap: () => context.push('/bank-transfer'),
               ),
               BillRow(
                 icon: Icons.south_outlined,
                 title: l.withdrawCash,
-                subtitle: 'Agent code, both carriers',
-                onTap: () {},
+                subtitle: 'Agent withdrawal via your carrier menu',
+                onTap: () => dial(mtnMenuRoot),
               ),
             ]),
             GroupLabel(l.billsUtilities),
             RowGroup(children: [
               BillRow(
-                icon: Icons.bolt_outlined,
-                title: '${l.electricity} · Water · TV',
-                subtitle: 'EUCL, WASAC, Canal+, DStv, StarTimes',
+                icon: Icons.receipt_long_outlined,
+                title: '${l.electricity} · Water · TV · Airtime',
+                subtitle: 'EUCL, WASAC, Canal+, DStv, StarTimes, bundles',
                 onTap: () => context.push('/bills'),
-              ),
-              BillRow(
-                icon: Icons.smartphone_outlined,
-                title: l.airtimeBundles,
-                subtitle: 'Auto top-up available',
-                onTap: () => context.push('/airtime'),
               ),
             ]),
             GroupLabel(l.government),
@@ -65,35 +72,17 @@ class PayHubScreen extends StatelessWidget {
               BillRow(
                 icon: Icons.account_balance_outlined,
                 title: 'Irembo · RRA · Mutuelle · School fees',
-                subtitle: 'Fines, taxes, health insurance, fees',
+                subtitle: 'Pay with your reference via the carrier menu',
                 onTap: () => context.push('/government'),
               ),
             ]),
-            GroupLabel(l.tools),
+            GroupLabel('Codes'),
             RowGroup(children: [
               BillRow(
-                icon: Icons.call_split_outlined,
-                title: l.splitABill,
-                subtitle: 'Share costs, request from friends',
-                onTap: () => context.push('/split'),
-              ),
-              BillRow(
-                icon: Icons.schedule_outlined,
-                title: l.ikimina,
-                subtitle: 'Group savings, rounds & reminders',
-                onTap: () => context.push('/ikimina'),
-              ),
-              BillRow(
-                icon: Icons.event_outlined,
-                title: l.scheduledPayments,
-                subtitle: 'Rent, fees, subscriptions',
-                onTap: () => context.push('/scheduled'),
-              ),
-              BillRow(
-                icon: Icons.bar_chart_outlined,
-                title: l.merchantMode,
-                subtitle: 'Income tracking, RRA-ready records',
-                onTap: () => context.push('/merchant'),
+                icon: Icons.dialpad,
+                title: 'eKash access codes',
+                subtitle: 'All banks and wallets on the national rail',
+                onTap: () => context.push('/accounts'),
               ),
             ]),
           ],

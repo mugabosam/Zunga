@@ -1,146 +1,64 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/data/sample_data.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/widgets/kit.dart';
 import '../../core/widgets/scaffold.dart';
 import '../../l10n/app_localizations.dart';
+import '../../ussd/providers.dart';
 
-/// Screen 12 — eKash bank ↔ wallet transfer.
-///
-/// Since 14 July 2026 every domestic interoperable retail payment routes
-/// through eKash (BNR Directive No. 45/2026): any bank to any wallet,
-/// fee capped at 20 RWF, settlement in under 15 seconds.
-class BankTransferScreen extends StatefulWidget {
+/// Bank ↔ wallet via eKash: pick where your money sits, and Zunga opens
+/// that institution's own eKash USSD entry point in your dialer. The
+/// bank's session handles recipient, amount and PIN.
+class BankTransferScreen extends ConsumerWidget {
   const BankTransferScreen({super.key});
 
   @override
-  State<BankTransferScreen> createState() => _BankTransferScreenState();
-}
-
-class _BankTransferScreenState extends State<BankTransferScreen> {
-  final String _digits = '30000';
-
-  int get _amount => int.tryParse(_digits) ?? 0;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
+    final banks = ref
+        .watch(institutionsProvider)
+        .where((i) => !i.isWallet && i.code != null)
+        .toList();
+
     return Scaffold(
       appBar: zAppBar(context, title: l.bankTransfer),
-      body: Column(
+      body: ListView(
+        padding: const EdgeInsets.only(bottom: 24),
         children: [
-          Stack(
-            children: [
-              ZCard(
-                child: Column(
-                  children: [
-                    _leg(l.from, 'BK', 'Bank of Kigali ··8901',
-                        'Balance 40,000 RWF'),
-                    const Divider(),
-                    _leg(l.to, 'A', 'Alexis KAYIRANGA',
-                        '+250 733 208 517 · Airtel Money'),
-                  ],
-                ),
+          RailNote(
+            l.ekashRailNote,
+            margin: const EdgeInsets.fromLTRB(24, 4, 24, 0),
+          ),
+          GroupLabel('Send from your bank', topPadding: 18),
+          RowGroup(children: [
+            for (final bank in banks)
+              BillRow(
+                leading: AvatarBox(bank.initials, size: 42),
+                title: bank.name,
+                subtitle: bank.code,
+                onTap: () => ref.read(ussdEngineProvider).dialManually(bank.code!),
+                trailing: const Icon(Icons.phone_outlined,
+                    size: 18, color: ZTokens.accent),
               ),
-              Positioned(
-                right: 26,
-                top: 0,
-                bottom: 0,
-                child: Center(
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: ZTokens.surface,
-                      border: Border.all(color: ZTokens.line),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.swap_vert, size: 17, color: ZTokens.ink2),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          RailNote(l.ekashRailNote),
-          Expanded(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(rwf(_amount), style: ZText.amount(56)),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'RWF',
-                    style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.6,
-                        color: ZTokens.ink3),
-                  ),
-                ],
-              ),
+          ]),
+          GroupLabel('Send from your wallet'),
+          RowGroup(children: [
+            BillRow(
+              leading: const AvatarBox('eK', size: 42),
+              title: 'MTN MoMo or Airtel Money → any bank or wallet',
+              subtitle: '*182*1*2# · works from any network',
+              onTap: () => ref.read(ussdEngineProvider).dialManually('*182*1*2#'),
+              trailing: const Icon(Icons.phone_outlined,
+                  size: 18, color: ZTokens.accent),
             ),
+          ]),
+          const RailNote(
+            'Tapping a bank opens your dialer with its eKash code. Press call and follow your bank\'s own menu — the eKash fee is capped at 20 RWF.',
+            icon: Icons.info_outline,
+            margin: EdgeInsets.fromLTRB(24, 16, 24, 0),
           ),
-          ZCard(
-            margin: const EdgeInsets.fromLTRB(24, 0, 24, 6),
-            child: Column(
-              children: [
-                _drow(l.ekashFee, '20 RWF'),
-                const Divider(),
-                _drow(l.arrives, l.instantly),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 14, 24, 22),
-            child: FilledButton(
-              onPressed: () {},
-              child: Text(l.continueLabel),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _leg(String label, String initials, String title, String sub) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
-      child: Row(
-        children: [
-          AvatarBox(initials, size: 42),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label.toUpperCase(),
-                    style: ZText.groupLabel.copyWith(fontSize: 11)),
-                const SizedBox(height: 2),
-                Text(title,
-                    style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w600)),
-                Text(sub, style: const TextStyle(fontSize: 12, color: ZTokens.ink3)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _drow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 14, color: ZTokens.ink2)),
-          Text(value,
-              style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  fontFeatures: ZTokens.numFeatures)),
         ],
       ),
     );

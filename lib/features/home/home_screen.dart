@@ -2,26 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/data/models.dart';
 import '../../core/data/sample_data.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/widgets/kit.dart';
 import '../../l10n/app_localizations.dart';
+import '../../ussd/providers.dart';
+import '../send/send_flow_state.dart';
 
-/// Screen 01 — Home dashboard.
+/// Home — no balances, no fake numbers. Zunga is a shortcut layer: the
+/// carriers hold the money, so home is your fastest route into their
+/// menus without typing the * strings yourself.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
-    final accounts = ref
-        .watch(linkedAccountsProvider)
-        .where((a) => a.connected && a.lastBalance != null)
-        .toList();
-    final txs = ref.watch(recentTransactionsProvider);
-    final total = accounts.fold<int>(0, (sum, a) => sum + (a.lastBalance ?? 0));
-    final name = ref.watch(userNameProvider).split(' ').first;
 
     return Scaffold(
       body: SafeArea(
@@ -36,7 +32,8 @@ class HomeScreen extends ConsumerWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(l.greeting(name), style: ZText.pageTitle),
+                      Text(l.greeting('').replaceAll(', ', ''),
+                          style: ZText.pageTitle),
                       const SizedBox(height: 2),
                       Text(
                         _dateLabel(),
@@ -44,96 +41,85 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  const AvatarBox('SM', dark: true),
+                  Container(
+                    width: 42,
+                    height: 42,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: ZTokens.ink,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Text('Z',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700)),
+                  ),
                 ],
               ),
             ),
-            // Balance card
+            // Quick actions — each one lands in the dialer with the right
+            // code, or one tap away from it.
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                children: [
+                  _quick(context, ref, Icons.arrow_forward, l.send,
+                      onTap: () => context.push('/send')),
+                  _quick(context, ref, Icons.qr_code, 'MoMo Pay',
+                      onTap: () {
+                    ref.read(sendFlowProvider.notifier).setTarget(PayTarget.merchantCode);
+                    context.push('/send');
+                  }),
+                  _quick(context, ref, Icons.account_balance_outlined, 'eKash',
+                      onTap: () => context.push('/bank-transfer')),
+                  _quick(context, ref, Icons.dialpad, '*182#',
+                      dial: mtnMenuRoot),
+                ],
+              ),
+            ),
+            GroupLabel('Your money menus', topPadding: 26),
+            RowGroup(children: [
+              BillRow(
+                leading: const AvatarBox('M', size: 42),
+                title: 'MTN MoMo',
+                subtitle: 'Balance, send, withdraw — full menu',
+                trailing: _dialPill(ref, mtnMenuRoot),
+              ),
+              BillRow(
+                leading: const AvatarBox('A', size: 42),
+                title: 'Airtel Money',
+                subtitle: 'Balance, send, withdraw — full menu',
+                trailing: _dialPill(ref, airtelMenuRoot),
+              ),
+              BillRow(
+                leading: const AvatarBox('eK', size: 42),
+                title: 'eKash · cross-network send',
+                subtitle: 'Any network to any network',
+                trailing: _dialPill(ref, '*182*1*2#'),
+              ),
+            ]),
+            const RailNote(
+              'Zunga only prepares the USSD codes you would dial yourself. '
+              'Money moves inside your carrier session — your PIN is typed there, never here.',
+              icon: Icons.lock_outline,
+              margin: EdgeInsets.fromLTRB(24, 18, 24, 0),
+            ),
+            GroupLabel(l.recentActivity),
             ZCard(
-              radius: ZTokens.radiusCard,
               padding: const EdgeInsets.all(24),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(l.totalBalance.toUpperCase(),
-                      style: ZText.groupLabel.copyWith(letterSpacing: 0.72)),
-                  const SizedBox(height: 8),
-                  Text.rich(
-                    TextSpan(
-                      text: rwf(total),
-                      style: ZText.amount(40),
-                      children: const [
-                        TextSpan(
-                          text: ' RWF',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w600,
-                            color: ZTokens.ink3,
-                            letterSpacing: 0,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    margin: const EdgeInsets.only(top: 20),
-                    padding: const EdgeInsets.only(top: 18),
-                    decoration: const BoxDecoration(
-                      border: Border(top: BorderSide(color: ZTokens.lineSoft)),
-                    ),
-                    child: Row(
-                      children: [
-                        for (final a in accounts)
-                          Expanded(child: _wallet(a)),
-                      ],
-                    ),
+                children: const [
+                  Icon(Icons.receipt_long_outlined, size: 28, color: ZTokens.ink3),
+                  SizedBox(height: 10),
+                  Text(
+                    'Your payments will appear here once SMS tracking ships. '
+                    'Until then, your carrier SMS is the record.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13, color: ZTokens.ink2, height: 1.5),
                   ),
                 ],
               ),
-            ),
-            // Quick actions
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 22, 24, 0),
-              child: Row(
-                children: [
-                  _quick(context, Icons.arrow_forward, l.send, '/send'),
-                  _quick(context, Icons.receipt_long_outlined, l.payBill, '/bills'),
-                  _quick(context, Icons.bolt_outlined, l.electricity, '/bills'),
-                  _quick(context, Icons.smartphone_outlined, l.airtime, '/airtime'),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 26, 24, 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(l.recentActivity,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                  GestureDetector(
-                    onTap: () => context.go('/activity'),
-                    child: Text(
-                      l.seeAll,
-                      style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: ZTokens.accent),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            RowGroup(
-              children: [
-                for (final t in txs)
-                  TxRow(
-                    initials: t.avatarInitials,
-                    title: t.counterpartyName,
-                    subtitle: '${t.category} · ${t.timeLabel}',
-                    amountRwf: rwf(t.amount),
-                    incoming: t.direction == TxDirection.received,
-                  ),
-              ],
             ),
           ],
         ),
@@ -141,60 +127,33 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _wallet(LinkedAccount a) {
-    final dot = switch (a.provider) {
-      'MTN MoMo' => 'M',
-      'Airtel Money' => 'A',
-      _ => 'BK',
-    };
-    final label = switch (a.provider) {
-      'MTN MoMo' => 'MTN MoMo',
-      'Airtel Money' => 'Airtel',
-      _ => 'Bank ··8901',
-    };
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 20,
-              height: 20,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                border: Border.all(color: ZTokens.line),
-                borderRadius: BorderRadius.circular(7),
-              ),
-              child: Text(dot,
-                  style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700)),
-            ),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                label,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: ZTokens.ink2),
-              ),
-            ),
-          ],
+  Widget _dialPill(WidgetRef ref, String code) {
+    return GestureDetector(
+      onTap: () => ref.read(ussdEngineProvider).dialManually(code),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: ZTokens.accentTint,
+          borderRadius: BorderRadius.circular(ZTokens.radiusPill),
         ),
-        const SizedBox(height: 6),
-        Text(rwf(a.lastBalance ?? 0),
-            style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                fontFeatures: ZTokens.numFeatures)),
-      ],
+        child: Text(
+          code,
+          style: const TextStyle(
+            fontFamily: ZTokens.fontFamilyMono,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: ZTokens.accent,
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _quick(BuildContext context, IconData icon, String label, String route) {
+  Widget _quick(BuildContext context, WidgetRef ref, IconData icon, String label,
+      {VoidCallback? onTap, String? dial}) {
     return Expanded(
       child: GestureDetector(
-        onTap: () => context.push(route),
+        onTap: onTap ?? () => ref.read(ussdEngineProvider).dialManually(dial!),
         child: Column(
           children: [
             Container(

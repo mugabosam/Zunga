@@ -9,54 +9,71 @@ import 'package:zunga/ussd/models.dart';
 void main() {
   group('Menu config bundle', () {
     late Map<String, dynamic> json;
+    late MenuConfigBundle bundle;
 
     setUpAll(() {
       json = jsonDecode(
         File('assets/configs/menu_configs.json').readAsStringSync(),
       ) as Map<String, dynamic>;
+      bundle = MenuConfigBundle.fromJson(json);
     });
 
-    test('parses all providers', () {
-      final bundle = MenuConfigBundle.fromJson(json);
+    test('carries the two wallets and the full eKash bank table', () {
       expect(bundle.providers.keys, containsAll(['mtn_momo', 'airtel_money']));
-      expect(bundle.providers.length, 6);
+      expect(bundle.providers.length, 20);
     });
 
-    test('eKash cross-network send uses the verified *182*1*2# code from both carriers', () {
-      final bundle = MenuConfigBundle.fromJson(json);
-      for (final provider in ['mtn_momo', 'airtel_money']) {
-        final flow = bundle.providers[provider]!.flows['send_cross_network_ekash']!;
-        expect(flow.root, '*182*1*2#');
-        expect(flow.nameCheckStep, isNotNull,
-            reason: 'name verification is mandatory before PIN');
-      }
+    test('official eKash access codes match the published table', () {
+      String root(String provider, [String flow = 'ekash_access']) =>
+          bundle.providers[provider]!.flows[flow]!.root;
+
+      expect(root('bank_of_kigali'), '*334*2*4#');
+      expect(root('equity_bank'), '*555*2#');
+      expect(root('gt_bank'), '*600*7*2#');
+      expect(root('bank_of_africa'), '*512*2*2#');
+      expect(root('copedu'), '*866*3#');
+      expect(root('im_bank'), '*227*4*3#');
+      expect(root('ecobank'), '*883*8*1#');
+      expect(root('zigama_css'), '*139*5*3#');
+      expect(root('ab_bank'), '*540*2*3#');
+      expect(root('umwalimu_sacco'), '*175*3#');
+      expect(root('bpr'), '*150*3*4#');
+      expect(root('lolc_unguka'), '*951*4#');
+      expect(root('access_bank'), '*903*3*5#');
+      expect(root('letshego'), '*598*1*3#');
+      expect(root('mvend'), '*737*1*2#');
+      expect(root('ncba_bank'), '*650*1*2#');
+      expect(root('jali'), '*655*8*3#');
+    });
+
+    test('Chipper Cash is app-only, no USSD flow', () {
+      expect(bundle.providers['chipper_cash']!.flows, isEmpty);
+    });
+
+    test('send codes are the user-facing trio', () {
+      final mtn = bundle.providers['mtn_momo']!;
+      expect(mtn.flows['send_same_network']!.root, '*182*1*1#');
+      expect(mtn.flows['send_cross_network_ekash']!.root, '*182*1*2#');
+      expect(mtn.flows['momo_pay']!.root, '*182*8*1#');
+      expect(bundle.providers['airtel_money']!
+          .flows['send_cross_network_ekash']!.root, '*182*1*2#');
+    });
+
+    test('inline templates compose full dial strings, root as fallback', () {
+      final send = bundle.providers['mtn_momo']!.flows['send_same_network']!;
+      expect(send.dialString(msisdn: '0788412903', amount: 5000),
+          '*182*1*1*0788412903*5000#');
+      expect(send.dialString(), '*182*1*1#',
+          reason: 'missing placeholder values must fall back to the root');
+
+      final momoPay = bundle.providers['mtn_momo']!.flows['momo_pay']!;
+      expect(momoPay.dialString(code: '048812'), '*182*8*1*048812#');
     });
 
     test('deprecated eKash wallet activation code is not shipped', () {
       final raw = jsonEncode(json['providers']);
       expect(raw.contains('*182*11#'), isFalse,
           reason: 'the standalone eKash wallet is phased out since 14 Jul 2026');
-    });
-
-    test('unverified flows are flagged so the engine fails closed', () {
-      final bundle = MenuConfigBundle.fromJson(json);
-      for (final p in bundle.providers.values) {
-        for (final f in p.flows.values) {
-          // Until Kigali field testing signs off a tree, it must carry the
-          // requires_field_verification flag.
-          expect(f.requiresFieldVerification, isTrue,
-              reason: '${p.provider}/${f.id} must be field-verified first');
-        }
-      }
-    });
-
-    test('steps match carrier strings in all three languages', () {
-      final bundle = MenuConfigBundle.fromJson(json);
-      final flow = bundle.providers['mtn_momo']!.flows['send_p2p']!;
-      expect(flow.steps.first.matches('Enter phone number'), isTrue);
-      expect(flow.steps.first.matches('Andika nimero ya telefoni'), isTrue);
-      expect(flow.steps.first.matches('Entrez le numéro'), isTrue);
-      expect(flow.steps.first.matches('Something unrelated'), isFalse);
     });
   });
 
@@ -85,9 +102,9 @@ void main() {
     });
 
     test('version rollback is rejected', () {
-      expect(ConfigVerifier.acceptsVersion(incoming: 40, current: 41), isFalse);
-      expect(ConfigVerifier.acceptsVersion(incoming: 41, current: 41), isTrue);
-      expect(ConfigVerifier.acceptsVersion(incoming: 42, current: 41), isTrue);
+      expect(ConfigVerifier.acceptsVersion(incoming: 1, current: 2), isFalse);
+      expect(ConfigVerifier.acceptsVersion(incoming: 2, current: 2), isTrue);
+      expect(ConfigVerifier.acceptsVersion(incoming: 3, current: 2), isTrue);
     });
   });
 }

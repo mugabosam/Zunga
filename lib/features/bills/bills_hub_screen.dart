@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/data/sample_data.dart';
 import '../../core/widgets/kit.dart';
 import '../../core/widgets/scaffold.dart';
 import '../../l10n/app_localizations.dart';
+import '../../ussd/providers.dart';
 
-/// Screen 05 — Bills hub.
-class BillsHubScreen extends StatelessWidget {
+/// Bills — a directory of real services. Each row opens the carrier
+/// menu in the dialer; deep one-tap codes per biller are added to the
+/// signed config as they are verified on a live SIM.
+class BillsHubScreen extends ConsumerWidget {
   const BillsHubScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
+
+    void dial(String code) => ref.read(ussdEngineProvider).dialManually(code);
+
     return Scaffold(
       appBar: zAppBar(context, title: l.payABill),
       body: ListView(
@@ -22,67 +29,54 @@ class BillsHubScreen extends StatelessWidget {
             BillRow(
               icon: Icons.bolt_outlined,
               title: '${l.electricity} · EUCL',
-              subtitle: 'Meter ··4123 · usual 10,000 RWF',
-              onTap: () => context.push('/bills/token'),
+              subtitle: 'Cash power token via the MoMo menu',
+              onTap: () => dial(mtnMenuRoot),
             ),
             BillRow(
               icon: Icons.water_drop_outlined,
               title: 'Water · WASAC',
-              subtitle: '8,240 RWF outstanding · ',
-              dueText: 'due in 5 days',
-              onTap: () {},
+              subtitle: 'Pay via the MoMo menu',
+              onTap: () => dial(mtnMenuRoot),
             ),
           ]),
           GroupLabel(l.television),
           RowGroup(children: [
             BillRow(
               icon: Icons.tv_outlined,
-              title: 'Canal+',
-              subtitle: 'Évasion bouquet · ',
-              dueText: 'expires in 2 days',
-              onTap: () {},
+              title: 'Canal+ · DStv · StarTimes',
+              subtitle: 'Pay via the MoMo menu',
+              onTap: () => dial(mtnMenuRoot),
+            ),
+          ]),
+          GroupLabel(l.airtimeBundles),
+          RowGroup(children: [
+            BillRow(
+              icon: Icons.smartphone_outlined,
+              title: 'MTN airtime & bundles',
+              subtitle: mtnMenuRoot,
+              onTap: () => dial(mtnMenuRoot),
             ),
             BillRow(
-              icon: Icons.tv_outlined,
-              title: 'DStv / GOtv',
-              subtitle: 'Add a smartcard number',
-              onTap: () {},
-            ),
-            BillRow(
-              icon: Icons.tv_outlined,
-              title: 'StarTimes',
-              subtitle: 'Add a smartcard number',
-              onTap: () {},
+              icon: Icons.smartphone_outlined,
+              title: 'Airtel airtime & bundles',
+              subtitle: airtelMenuRoot,
+              onTap: () => dial(airtelMenuRoot),
             ),
           ]),
           GroupLabel(l.government),
           RowGroup(children: [
             BillRow(
               icon: Icons.account_balance_outlined,
-              title: 'Irembo services',
-              subtitle: 'Fines, permits, certificates',
-              onTap: () => context.push('/government'),
-            ),
-            BillRow(
-              icon: Icons.description_outlined,
-              title: 'RRA taxes',
-              subtitle: 'Declare and pay with reference',
-              onTap: () => context.push('/government'),
-            ),
-            BillRow(
-              icon: Icons.favorite_outline,
-              title: l.mutuelle,
-              subtitle: 'Household 2026 · ',
-              dueText: '1 member pending',
-              onTap: () => context.push('/government/mutuelle'),
-            ),
-            BillRow(
-              icon: Icons.school_outlined,
-              title: 'School fees',
-              subtitle: 'Pay via bank or MoMo reference',
-              onTap: () {},
+              title: 'Irembo · RRA · Mutuelle · School fees',
+              subtitle: 'Pay via the MoMo menu with your reference',
+              onTap: () => dial(mtnMenuRoot),
             ),
           ]),
+          const RailNote(
+            'Each row opens your dialer on the carrier menu. One-tap deep codes per biller ship remotely as they are confirmed on real SIMs — no app update needed.',
+            icon: Icons.info_outline,
+            margin: EdgeInsets.fromLTRB(24, 16, 24, 0),
+          ),
         ],
       ),
     );

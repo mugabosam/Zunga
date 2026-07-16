@@ -5,40 +5,21 @@ import 'package:go_router/go_router.dart';
 import '../../features/accounts/bank_transfer_screen.dart';
 import '../../features/accounts/linked_accounts_screen.dart';
 import '../../features/activity/activity_screen.dart';
-import '../../features/bills/airtime_screen.dart';
 import '../../features/bills/bills_hub_screen.dart';
-import '../../features/bills/token_result_screen.dart';
 import '../../features/government/government_screen.dart';
-import '../../features/government/mutuelle_screen.dart';
 import '../../features/home/home_screen.dart';
-import '../../features/merchant_mode/merchant_dashboard_screen.dart';
 import '../../features/merchant_pay/merchant_pay_screen.dart';
-import '../../features/onboarding/onboarding_screen.dart';
-import '../../features/onboarding/pin_setup_screen.dart';
 import '../../features/pay/pay_hub_screen.dart';
-import '../../features/send/scam_alert_screen.dart';
 import '../../features/send/send_amount_screen.dart';
-import '../../features/send/send_confirm_screen.dart';
-import '../../features/send/send_recipient_screen.dart';
-import '../../features/send/send_success_screen.dart';
+import '../../features/send/send_target_screen.dart';
 import '../../features/settings/profile_screen.dart';
-import '../../features/tools/ikimina_screen.dart';
-import '../../features/tools/scheduled_screen.dart';
-import '../../features/tools/split_screen.dart';
 import '../theme/tokens.dart';
 import '../../l10n/app_localizations.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    initialLocation: '/onboarding',
+    initialLocation: '/home',
     routes: [
-      GoRoute(
-        path: '/onboarding',
-        builder: (_, _) => const OnboardingScreen(),
-        routes: [
-          GoRoute(path: 'pin', builder: (_, _) => const PinSetupScreen()),
-        ],
-      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => _NavShell(shell: shell),
         branches: [
@@ -56,23 +37,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           ]),
         ],
       ),
-      GoRoute(path: '/send', builder: (_, _) => const SendRecipientScreen()),
-      GoRoute(path: '/send/amount', builder: (_, _) => const SendAmountScreen()),
-      GoRoute(path: '/send/confirm', builder: (_, _) => const SendConfirmScreen()),
-      GoRoute(path: '/send/success', builder: (_, _) => const SendSuccessScreen()),
-      GoRoute(path: '/send/scam-alert', builder: (_, _) => const ScamAlertScreen()),
+      GoRoute(path: '/send', builder: (_, _) => const SendAmountScreen()),
+      GoRoute(path: '/send/target', builder: (_, _) => const SendTargetScreen()),
       GoRoute(path: '/bills', builder: (_, _) => const BillsHubScreen()),
-      GoRoute(path: '/bills/token', builder: (_, _) => const TokenResultScreen()),
-      GoRoute(path: '/airtime', builder: (_, _) => const AirtimeScreen()),
       GoRoute(path: '/merchant-pay', builder: (_, _) => const MerchantPayScreen()),
       GoRoute(path: '/bank-transfer', builder: (_, _) => const BankTransferScreen()),
       GoRoute(path: '/accounts', builder: (_, _) => const LinkedAccountsScreen()),
-      GoRoute(path: '/split', builder: (_, _) => const SplitScreen()),
-      GoRoute(path: '/ikimina', builder: (_, _) => const IkiminaScreen()),
-      GoRoute(path: '/scheduled', builder: (_, _) => const ScheduledScreen()),
       GoRoute(path: '/government', builder: (_, _) => const GovernmentScreen()),
-      GoRoute(path: '/government/mutuelle', builder: (_, _) => const MutuelleScreen()),
-      GoRoute(path: '/merchant', builder: (_, _) => const MerchantDashboardScreen()),
     ],
   );
 });
