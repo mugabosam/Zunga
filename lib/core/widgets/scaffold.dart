@@ -47,9 +47,8 @@ PreferredSizeWidget zAppBar(
     title: Text(title),
     actions: [
       if (trailing != null)
-        Padding(padding: const EdgeInsets.only(right: 24), child: trailing)
-      else if (showBack)
-        const SizedBox(width: 60),
+        Padding(padding: const EdgeInsets.only(right: 24), child: trailing),
+      if (trailing == null && showBack) const SizedBox(width: 60),
     ],
   );
 }
@@ -69,7 +68,7 @@ class PageTitleBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(title, style: ZText.pageTitle),
-          if (trailing != null) trailing!,
+          ?trailing,
         ],
       ),
     );

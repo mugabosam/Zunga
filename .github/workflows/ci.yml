@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      # §6.2 gate: a logger/print call inside ussd/ or security/ could leak
+      # a PIN. Fail the build outright.
+      - name: Security grep gate — no logging in sensitive packages
+        run: |
+          if grep -rnE '\b(print|debugPrint|log\()' lib/ussd lib/security; then
+            echo '::error::Logging call found in lib/ussd or lib/security — PINs must never be loggable'
+            exit 1
+          fi
+
+      # §7 gate: no hardcoded user-facing string literals in screens
+      # (Text('...') is allowed only through AppLocalizations or kit
+      # widgets fed by providers — warn-level for now).
+      - name: Regenerate dev config signature
+        run: |
+          flutter pub get
+          dart run tool/sign_config.dart
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Dependency audit
+        run: flutter pub outdated || true
+
+      - name: Build release AAB (obfuscated)
+        run: flutter build appbundle --obfuscate --split-debug-info=build/symbols

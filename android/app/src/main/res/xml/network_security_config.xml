@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TLS 1.2+ only, no cleartext anywhere (§6.4). Certificate pins for the
+     Supabase project + config CDN are added once the backend is
+     provisioned; keep a pinned backup key and a remote kill-switch for
+     rotation. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
+</network-security-config>

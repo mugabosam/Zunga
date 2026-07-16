@@ -43,3 +43,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Dev-only config signing key (regenerate with: dart run tool/sign_config.dart)
+tool/dev_key.json

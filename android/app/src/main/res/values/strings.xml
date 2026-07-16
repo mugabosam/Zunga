@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="accessibility_service_description">Zunga automates the carrier USSD menus (*182#, *500#, *182*1*2#) that you would otherwise dial yourself, on your own SIM. It reads only the carrier USSD dialog — never any other app — and your PINs are never stored or sent to Zunga servers.</string>
+</resources>

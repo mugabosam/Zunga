@@ -19,6 +19,7 @@ class AppLockNotifier extends Notifier<bool> with WidgetsBindingObserver {
   }
 
   @override
+  // ignore: avoid_renaming_method_parameters — `state` is taken by Notifier.
   void didChangeAppLifecycleState(AppLifecycleState lifecycle) {
     switch (lifecycle) {
       case AppLifecycleState.paused:
