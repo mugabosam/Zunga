@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/data/profile.dart';
 import '../../core/l10n/locale_provider.dart';
+import '../send/send_flow_state.dart' show detectNetwork;
 import '../../core/theme/tokens.dart';
 import '../../core/widgets/kit.dart';
 import '../../core/widgets/scaffold.dart';
@@ -18,6 +20,7 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     final locale = ref.watch(localeProvider);
+    final myNumber = ref.watch(myNumberProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -25,7 +28,26 @@ class ProfileScreen extends ConsumerWidget {
           padding: const EdgeInsets.only(bottom: 16),
           children: [
             PageTitleBar(l.profile),
-            GroupLabel(l.language, topPadding: 8),
+            GroupLabel('My number', topPadding: 8),
+            RowGroup(children: [
+              BillRow(
+                icon: Icons.sim_card_outlined,
+                title: myNumber == null
+                    ? 'Not registered'
+                    : _formatNumber(myNumber),
+                subtitle: myNumber == null
+                    ? 'Register the number you pay from'
+                    : '${detectNetwork(myNumber) ?? 'Unknown network'} · payments leave from this number',
+                trailing: Text(l.change,
+                    style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: ZTokens.accent)),
+                onTap: () => context.push('/register'),
+                showChevron: false,
+              ),
+            ]),
+            GroupLabel(l.language),
             ZCard(
               padding: const EdgeInsets.all(14),
               child: Row(
@@ -59,6 +81,15 @@ class ProfileScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  String _formatNumber(String raw) {
+    final b = StringBuffer();
+    for (var i = 0; i < raw.length; i++) {
+      if (i == 4 || i == 7) b.write(' ');
+      b.write(raw[i]);
+    }
+    return b.toString();
   }
 
   Widget _lang(WidgetRef ref, String label, String code, String current) {

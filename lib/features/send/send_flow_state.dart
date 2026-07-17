@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/data/profile.dart';
 import '../../ussd/providers.dart';
 
 /// The whole product in one file: turn what the user typed into the
@@ -95,10 +96,22 @@ class SendFlowState {
 class SendFlowNotifier extends Notifier<SendFlowState> {
   @override
   SendFlowState build() {
-    _detectSims();
-    return const SendFlowState();
+    // The registered number (first-run setup) is the source of truth for
+    // where money leaves from: its prefix decides the source network.
+    final myNumber = ref.watch(myNumberProvider);
+    final myNetwork = myNumber == null ? null : detectNetwork(myNumber);
+    if (myNetwork == null) _detectSims();
+    return SendFlowState(
+      simNetworks: switch (myNetwork) {
+        'MTN' => const {SimNetwork.mtn},
+        'Airtel' => const {SimNetwork.airtel},
+        _ => const {SimNetwork.mtn},
+      },
+    );
   }
 
+  /// Fallback only — used when no number is registered (should not
+  /// happen behind the /register gate, but never guess silently).
   Future<void> _detectSims() async {
     final sims = await ref.read(ussdEngineProvider).getSimAccounts();
     final networks = <SimNetwork>{};

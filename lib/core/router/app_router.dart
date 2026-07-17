@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/data/profile.dart';
 import '../../features/accounts/bank_transfer_screen.dart';
 import '../../features/accounts/linked_accounts_screen.dart';
 import '../../features/activity/activity_screen.dart';
@@ -9,6 +10,7 @@ import '../../features/bills/bills_hub_screen.dart';
 import '../../features/government/government_screen.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/merchant_pay/merchant_pay_screen.dart';
+import '../../features/onboarding/register_screen.dart';
 import '../../features/pay/pay_hub_screen.dart';
 import '../../features/send/send_amount_screen.dart';
 import '../../features/send/send_target_screen.dart';
@@ -19,7 +21,20 @@ import '../../l10n/app_localizations.dart';
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/home',
+    // One-time setup gate: until the user registers the number they pay
+    // from, every route lands on /register.
+    redirect: (context, state) {
+      final registered = ref.read(myNumberProvider) != null;
+      if (!registered && state.matchedLocation != '/register') {
+        return '/register';
+      }
+      if (registered && state.matchedLocation == '/register') {
+        return '/home';
+      }
+      return null;
+    },
     routes: [
+      GoRoute(path: '/register', builder: (_, _) => const RegisterScreen()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => _NavShell(shell: shell),
         branches: [
