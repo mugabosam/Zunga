@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/data/name_lookup.dart';
 import '../../core/data/recents.dart';
+import '../../core/data/settings.dart';
+import '../../core/data/transactions.dart';
 import '../../core/theme/tokens.dart';
 import '../../core/widgets/kit.dart';
 import '../../core/widgets/scaffold.dart';
@@ -87,7 +89,15 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
       return;
     }
 
-    // 3. The phone's own contacts.
+    // 3. The phone's own contacts — only with the user's consent toggle.
+    if (!ref.read(settingsProvider).enableContacts) {
+      setState(() {
+        _name = null;
+        _nameSource = null;
+        _lookingUp = false;
+      });
+      return;
+    }
     final contact = await ref.read(ussdEngineProvider).lookupContactName(number);
     if (!mounted || number != _number) return;
     setState(() {
@@ -109,7 +119,10 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
     final preview = flow.copyWith(recipientMsisdn: _number, merchantCode: _code);
 
     return Scaffold(
-      appBar: zAppBar(context, title: '${l.pay} · ${rwf(flow.amount)} RWF'),
+      appBar: zAppBar(
+        context,
+        title: flow.amount > 0 ? '${l.pay} · ${rwf(flow.amount)} RWF' : l.sendMoney,
+      ),
       body: Column(
         children: [
           SegControl(
@@ -261,7 +274,9 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 22),
             child: FilledButton(
               onPressed: canPay ? () => _pay(context) : null,
-              child: Text('${l.pay} ${rwf(flow.amount)} RWF'),
+              child: Text(flow.amount > 0
+                  ? '${l.pay} ${rwf(flow.amount)} RWF'
+                  : l.pay),
             ),
           ),
         ],
@@ -275,9 +290,17 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
     notifier.setMerchantCode(_code);
     final flow = ref.read(sendFlowProvider);
 
+    // Coach mark (execution prompt §3): the next popup belongs to the
+    // carrier, not Zunga. Shown before every session; backing out here
+    // means nothing was sent and nothing is recorded.
+    final proceed = await _showCoachMark(context, flow);
+    if (proceed != true || !context.mounted) return;
+
+    final settings = ref.read(settingsProvider);
+
     // Remember who was paid so the next send is one tap; the best-known
     // name is stored alongside (on-device only).
-    if (flow.target == PayTarget.phoneNumber) {
+    if (settings.saveRecents && flow.target == PayTarget.phoneNumber) {
       await ref.read(recentsProvider.notifier).remember(RecentRecipient(
             msisdn: _number,
             name: _name,
@@ -286,14 +309,100 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
           ));
     }
 
+    // Lifecycle §2.1: recorded as awaiting_pin, promoted to
+    // pending_confirmation once the session is handed to the carrier.
+    // It becomes `confirmed` — and only then visible in totals — when
+    // the success string or the carrier SMS proves it.
+    TxRecord? tx;
+    if (settings.saveTransactions) {
+      tx = await ref.read(transactionsProvider.notifier).record(TxRecord(
+            id: DateTime.now().microsecondsSinceEpoch.toString(),
+            msisdn: flow.target == PayTarget.phoneNumber ? _number : _code,
+            counterpartyName: _name,
+            amount: flow.amount,
+            network: detectNetwork(_number) ?? flow.routeLabel,
+            status: TxStatus.awaitingPin,
+            createdAt: DateTime.now(),
+          ));
+    }
+
     // Runs the session in place — the carrier popup takes over and asks
     // for the PIN. Falls back to the prefilled dialer only if the call
     // permission was just requested.
     await ref.read(ussdEngineProvider).launchUssd(flow.dialCode);
+    if (tx != null) {
+      await ref
+          .read(transactionsProvider.notifier)
+          .setStatus(tx.id, TxStatus.pendingConfirmation);
+    }
 
     if (!context.mounted) return;
     notifier.reset();
     context.go('/home');
+  }
+
+  Future<bool?> _showCoachMark(BuildContext context, SendFlowState flow) {
+    final carrier = flow.simNetworks.contains(SimNetwork.airtel) &&
+            !flow.isCrossNetwork &&
+            detectNetwork(_number) == 'Airtel'
+        ? 'Airtel'
+        : 'MTN';
+    return showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: ZTokens.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheet) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 18),
+                decoration: BoxDecoration(
+                  color: ZTokens.line,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Container(
+                width: 52,
+                height: 52,
+                margin: const EdgeInsets.only(bottom: 14),
+                decoration: BoxDecoration(
+                  color: ZTokens.accentTint,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(Icons.lock_outline,
+                    color: ZTokens.accent, size: 24),
+              ),
+              Text(
+                '$carrier will now ask for your PIN',
+                style:
+                    const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'The popup that appears next belongs to your network, not '
+                'Zunga. Your PIN goes to them — Zunga never sees it. '
+                'Cancel there and nothing is sent.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 13.5, color: ZTokens.ink2, height: 1.55),
+              ),
+              const SizedBox(height: 20),
+              FilledButton(
+                onPressed: () => Navigator.pop(sheet, true),
+                child: const Text('Continue'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   String _formatNumber(String raw) {

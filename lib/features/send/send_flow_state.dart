@@ -96,17 +96,14 @@ class SendFlowState {
 class SendFlowNotifier extends Notifier<SendFlowState> {
   @override
   SendFlowState build() {
-    // The registered number (first-run setup) is the source of truth for
-    // where money leaves from: its prefix decides the source network.
-    final myNumber = ref.watch(myNumberProvider);
-    final myNetwork = myNumber == null ? null : detectNetwork(myNumber);
-    if (myNetwork == null) _detectSims();
+    // The active wallet (home top-bar badge, defaulting to the
+    // registered number's network) decides where money leaves from.
+    final wallet = ref.watch(activeWalletProvider);
+    if (ref.read(myNumberProvider) == null) _detectSims();
     return SendFlowState(
-      simNetworks: switch (myNetwork) {
-        'MTN' => const {SimNetwork.mtn},
-        'Airtel' => const {SimNetwork.airtel},
-        _ => const {SimNetwork.mtn},
-      },
+      simNetworks: wallet == 'Airtel'
+          ? const {SimNetwork.airtel}
+          : const {SimNetwork.mtn},
     );
   }
 

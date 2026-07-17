@@ -37,6 +37,9 @@ dependencies:
   # Formatting (RWF amounts, dates, tabular numerals handled by theme)
   intl: any
 
+  # WhatsApp support, Play rating, policy pages
+  url_launcher: ^6.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

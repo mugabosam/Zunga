@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press launcher shortcuts (execution prompt Part 1). Each one
+     deep-links via zunga://<route>; MainActivity forwards the route to
+     Flutter over the shortcuts channel. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="send_money"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_send">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="zunga://send"
+            android:targetPackage="rw.zunga"
+            android:targetClass="rw.zunga.MainActivity"/>
+    </shortcut>
+    <shortcut
+        android:shortcutId="buy_electricity"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_electricity">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="zunga://bills"
+            android:targetPackage="rw.zunga"
+            android:targetClass="rw.zunga.MainActivity"/>
+    </shortcut>
+    <shortcut
+        android:shortcutId="check_balance"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_balance">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="zunga://balance"
+            android:targetPackage="rw.zunga"
+            android:targetClass="rw.zunga.MainActivity"/>
+    </shortcut>
+</shortcuts>

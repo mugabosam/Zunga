@@ -48,3 +48,9 @@ final institutionsProvider = Provider<List<Institution>>((ref) => ekashInstituti
 /// Wallet menu roots — the two carriers' own USSD entry points.
 const mtnMenuRoot = '*182#';
 const airtelMenuRoot = '*500#';
+
+/// On-demand balance checks (never auto-polled). MTN's balance path is
+/// the documented *182*6*1#; Airtel opens the Airtel Money menu — its
+/// deep balance code ships via the signed config once verified on SIM.
+const mtnBalanceCode = '*182*6*1#';
+const airtelBalanceCode = '*500#';

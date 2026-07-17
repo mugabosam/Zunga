@@ -12,7 +12,6 @@ import '../../features/home/home_screen.dart';
 import '../../features/merchant_pay/merchant_pay_screen.dart';
 import '../../features/onboarding/register_screen.dart';
 import '../../features/pay/pay_hub_screen.dart';
-import '../../features/send/send_amount_screen.dart';
 import '../../features/send/send_target_screen.dart';
 import '../../features/settings/profile_screen.dart';
 import '../theme/tokens.dart';
@@ -52,8 +51,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ]),
         ],
       ),
-      GoRoute(path: '/send', builder: (_, _) => const SendAmountScreen()),
-      GoRoute(path: '/send/target', builder: (_, _) => const SendTargetScreen()),
+      GoRoute(path: '/send', builder: (_, _) => const SendTargetScreen()),
       GoRoute(path: '/bills', builder: (_, _) => const BillsHubScreen()),
       GoRoute(path: '/merchant-pay', builder: (_, _) => const MerchantPayScreen()),
       GoRoute(path: '/bank-transfer', builder: (_, _) => const BankTransferScreen()),

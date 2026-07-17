@@ -39,3 +39,38 @@ class MyNumberNotifier extends Notifier<String?> {
 final myNumberProvider = NotifierProvider<MyNumberNotifier, String?>(
   () => MyNumberNotifier(null),
 );
+
+/// The wallet shown in the home top-bar badge and used as the source of
+/// the next payment: 'MTN' or 'Airtel'. Defaults to the registered
+/// number's network; switching persists on-device.
+class ActiveWalletNotifier extends Notifier<String> {
+  static const _key = 'active_wallet';
+
+  @override
+  String build() {
+    final myNumber = ref.watch(myNumberProvider);
+    _restore();
+    if (myNumber == null) return 'MTN';
+    final local = myNumber.replaceAll(RegExp(r'\D'), '');
+    return local.startsWith('072') || local.startsWith('073') ? 'Airtel' : 'MTN';
+  }
+
+  Future<void> _restore() async {
+    const storage = FlutterSecureStorage(
+      aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    );
+    final saved = await storage.read(key: _key);
+    if (saved == 'MTN' || saved == 'Airtel') state = saved!;
+  }
+
+  Future<void> switchTo(String wallet) async {
+    state = wallet;
+    const storage = FlutterSecureStorage(
+      aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    );
+    await storage.write(key: _key, value: wallet);
+  }
+}
+
+final activeWalletProvider =
+    NotifierProvider<ActiveWalletNotifier, String>(ActiveWalletNotifier.new);

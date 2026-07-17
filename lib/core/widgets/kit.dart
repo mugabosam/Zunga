@@ -445,12 +445,19 @@ class SegControl extends StatelessWidget {
   }
 }
 
-/// Numeric keypad (`.keypad`). Emits digits and backspace.
+/// Numeric keypad (`.keypad`). Emits digits and backspace; when
+/// [onClear] is given the bottom-left key becomes `clear`.
 class ZKeypad extends StatelessWidget {
-  const ZKeypad({super.key, required this.onDigit, required this.onBackspace});
+  const ZKeypad({
+    super.key,
+    required this.onDigit,
+    required this.onBackspace,
+    this.onClear,
+  });
 
   final ValueChanged<String> onDigit;
   final VoidCallback onBackspace;
+  final VoidCallback? onClear;
 
   @override
   Widget build(BuildContext context) {
@@ -482,7 +489,19 @@ class ZKeypad extends StatelessWidget {
           Row(children: [key('4'), key('5'), key('6')]),
           Row(children: [key('7'), key('8'), key('9')]),
           Row(children: [
-            key('·', onTap: () {}),
+            onClear != null
+                ? key(
+                    'clear',
+                    onTap: onClear,
+                    child: const Text(
+                      'clear',
+                      style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: ZTokens.accent),
+                    ),
+                  )
+                : key('·', onTap: () {}),
             key('0'),
             key(
               '⌫',

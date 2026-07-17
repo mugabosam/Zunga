@@ -4,14 +4,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/l10n/locale_provider.dart';
 import 'core/router/app_router.dart';
+import 'core/shortcuts.dart';
 import 'core/theme/theme.dart';
 import 'l10n/app_localizations.dart';
 
-class ZungaApp extends ConsumerWidget {
+class ZungaApp extends ConsumerStatefulWidget {
   const ZungaApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ZungaApp> createState() => _ZungaAppState();
+}
+
+class _ZungaAppState extends ConsumerState<ZungaApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Launcher shortcuts (Send money / Buy electricity / Check balance)
+    // are resolved once the first frame is up.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(shortcutDispatcherProvider).dispatchPending();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     final locale = ref.watch(localeProvider);
 
