@@ -21,19 +21,20 @@ void main() {
     });
   });
 
-  group('Dial code selection — the codes the user actually dials', () {
-    test('MTN → MTN pre-fills number and amount, leaving only the PIN', () {
+  group('Dial code selection — SIM networks detected, never asked', () {
+    test('MTN SIM → MTN number pre-fills number and amount', () {
       const s = SendFlowState(
-        source: SourceNetwork.mtn,
+        simNetworks: {SimNetwork.mtn},
         recipientMsisdn: '0788412903',
         amount: 5000,
       );
+      expect(s.isCrossNetwork, isFalse);
       expect(s.dialCode, '*182*1*1*0788412903*5000#');
     });
 
-    test('MTN → Airtel routes through eKash *182*1*2#', () {
+    test('MTN SIM → Airtel number routes through eKash *182*1*2#', () {
       const s = SendFlowState(
-        source: SourceNetwork.mtn,
+        simNetworks: {SimNetwork.mtn},
         recipientMsisdn: '0733208517',
         amount: 5000,
       );
@@ -41,9 +42,9 @@ void main() {
       expect(s.dialCode, '*182*1*2#');
     });
 
-    test('Airtel → MTN also routes through eKash *182*1*2#', () {
+    test('Airtel SIM → MTN number also routes through eKash', () {
       const s = SendFlowState(
-        source: SourceNetwork.airtel,
+        simNetworks: {SimNetwork.airtel},
         recipientMsisdn: '0788412903',
         amount: 5000,
       );
@@ -51,13 +52,24 @@ void main() {
       expect(s.dialCode, '*182*1*2#');
     });
 
-    test('Airtel → Airtel opens the Airtel Money menu *500#', () {
+    test('Airtel SIM → Airtel number opens the Airtel Money menu', () {
       const s = SendFlowState(
-        source: SourceNetwork.airtel,
+        simNetworks: {SimNetwork.airtel},
         recipientMsisdn: '0733208517',
         amount: 5000,
       );
+      expect(s.isCrossNetwork, isFalse);
       expect(s.dialCode, '*500#');
+    });
+
+    test('dual SIM prefers the same-network route on either side', () {
+      const both = {SimNetwork.mtn, SimNetwork.airtel};
+      const toMtn = SendFlowState(
+          simNetworks: both, recipientMsisdn: '0788412903', amount: 1000);
+      const toAirtel = SendFlowState(
+          simNetworks: both, recipientMsisdn: '0733208517', amount: 1000);
+      expect(toMtn.dialCode, '*182*1*1*0788412903*1000#');
+      expect(toAirtel.dialCode, '*500#');
     });
 
     test('MoMo Pay merchant code pre-fills *182*8*1*code#', () {

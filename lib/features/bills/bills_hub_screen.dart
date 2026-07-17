@@ -17,7 +17,7 @@ class BillsHubScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
 
-    void dial(String code) => ref.read(ussdEngineProvider).dialManually(code);
+    void dial(String code) => ref.read(ussdEngineProvider).launchUssd(code);
 
     return Scaffold(
       appBar: zAppBar(context, title: l.payABill),

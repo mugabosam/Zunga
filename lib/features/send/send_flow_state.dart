@@ -1,43 +1,54 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../ussd/providers.dart';
+
 /// The whole product in one file: turn what the user typed into the
-/// right USSD dial string, then hand off to the phone dialer where the
-/// carrier session asks for their PIN. Zunga never touches the money.
+/// right USSD dial string, run the session, and let the carrier's own
+/// popup ask for the PIN. Zunga never touches the money.
 ///
 /// Codes (verified, July 2026):
-///  - MTN → MTN:            *182*1*1#   (inline: *182*1*1*number*amount#)
+///  - MTN → MTN:            *182*1*1*number*amount#  (only the PIN left)
 ///  - Cross-network (eKash): *182*1*2#   — works from ANY network
-///  - MoMo Pay merchant:     *182*8*1#   (inline: *182*8*1*code#)
-///  - Airtel Money menu:     *500#
+///  - MoMo Pay merchant:     *182*8*1*code#
+///  - Airtel → Airtel:       *500#  (Airtel Money menu)
 enum PayTarget { phoneNumber, merchantCode }
 
-enum SourceNetwork { mtn, airtel }
+enum SimNetwork { mtn, airtel }
 
 class SendFlowState {
   const SendFlowState({
     this.amount = 0,
     this.target = PayTarget.phoneNumber,
-    this.source = SourceNetwork.mtn,
+    this.simNetworks = const {SimNetwork.mtn},
     this.recipientMsisdn = '',
     this.merchantCode = '',
   });
 
   final int amount;
   final PayTarget target;
-  final SourceNetwork source;
+
+  /// Networks of the SIMs actually in the phone, detected via
+  /// SubscriptionManager — never asked from the user. Defaults to MTN
+  /// (the majority network) until detection completes or when the
+  /// READ_PHONE_STATE permission is missing.
+  final Set<SimNetwork> simNetworks;
   final String recipientMsisdn;
   final String merchantCode;
 
   String? get recipientNetwork => detectNetwork(recipientMsisdn);
 
+  /// Cross-network when no SIM in the phone matches the recipient's
+  /// network — then eKash (*182*1*2#) is the route.
   bool get isCrossNetwork {
-    final to = recipientNetwork;
-    if (to == null) return false;
-    return (source == SourceNetwork.mtn) != (to == 'MTN');
+    return switch (recipientNetwork) {
+      'MTN' => !simNetworks.contains(SimNetwork.mtn),
+      'Airtel' => !simNetworks.contains(SimNetwork.airtel),
+      _ => false,
+    };
   }
 
-  /// The exact string handed to the dialer. Shown to the user verbatim
-  /// before they press call.
+  /// The exact session string. The user never sees it — they only meet
+  /// the carrier's popup asking for their PIN.
   String get dialCode {
     if (target == PayTarget.merchantCode) {
       // MoMo Pay: signage format *182*8*1*code# pre-fills the code.
@@ -45,11 +56,9 @@ class SendFlowState {
     }
     final digits = recipientMsisdn.replaceAll(RegExp(r'\D'), '');
     if (isCrossNetwork) {
-      // eKash cross-network send — dialable from any network. The eKash
-      // session asks for recipient and amount itself.
       return '*182*1*2#';
     }
-    if (source == SourceNetwork.airtel) {
+    if (recipientNetwork == 'Airtel') {
       // Airtel → Airtel goes through the Airtel Money menu.
       return '*500#';
     }
@@ -63,20 +72,20 @@ class SendFlowState {
   String get routeLabel {
     if (target == PayTarget.merchantCode) return 'MoMo Pay';
     if (isCrossNetwork) return 'via eKash';
-    return source == SourceNetwork.mtn ? 'MTN → MTN' : 'Airtel → Airtel';
+    return recipientNetwork == 'Airtel' ? 'Airtel → Airtel' : 'MTN → MTN';
   }
 
   SendFlowState copyWith({
     int? amount,
     PayTarget? target,
-    SourceNetwork? source,
+    Set<SimNetwork>? simNetworks,
     String? recipientMsisdn,
     String? merchantCode,
   }) {
     return SendFlowState(
       amount: amount ?? this.amount,
       target: target ?? this.target,
-      source: source ?? this.source,
+      simNetworks: simNetworks ?? this.simNetworks,
       recipientMsisdn: recipientMsisdn ?? this.recipientMsisdn,
       merchantCode: merchantCode ?? this.merchantCode,
     );
@@ -85,19 +94,33 @@ class SendFlowState {
 
 class SendFlowNotifier extends Notifier<SendFlowState> {
   @override
-  SendFlowState build() => const SendFlowState();
+  SendFlowState build() {
+    _detectSims();
+    return const SendFlowState();
+  }
+
+  Future<void> _detectSims() async {
+    final sims = await ref.read(ussdEngineProvider).getSimAccounts();
+    final networks = <SimNetwork>{};
+    for (final sim in sims) {
+      final carrier = sim.carrier.toLowerCase();
+      if (carrier.contains('mtn')) networks.add(SimNetwork.mtn);
+      if (carrier.contains('airtel')) networks.add(SimNetwork.airtel);
+    }
+    if (networks.isNotEmpty) {
+      state = state.copyWith(simNetworks: networks);
+    }
+  }
 
   void setAmount(int amount) => state = state.copyWith(amount: amount);
 
   void setTarget(PayTarget target) => state = state.copyWith(target: target);
 
-  void setSource(SourceNetwork source) => state = state.copyWith(source: source);
-
   void setNumber(String msisdn) => state = state.copyWith(recipientMsisdn: msisdn);
 
   void setMerchantCode(String code) => state = state.copyWith(merchantCode: code);
 
-  void reset() => state = const SendFlowState();
+  void reset() => state = SendFlowState(simNetworks: state.simNetworks);
 }
 
 final sendFlowProvider =

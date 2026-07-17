@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,9 +11,10 @@ import '../../l10n/app_localizations.dart';
 import '../../ussd/providers.dart';
 import 'send_flow_state.dart';
 
-/// Send · step 2: phone number or MoMo Pay code, then hand off to the
-/// phone dialer with the right USSD string prefilled. The user presses
-/// call and types only their carrier PIN — Zunga never sees the money.
+/// Send · step 2: phone number or MoMo Pay code. The network is
+/// detected from the number, the contact name appears for a last check,
+/// and Pay runs the USSD session directly — the carrier's own popup
+/// asks for the PIN. No codes shown, no dialer detour.
 class SendTargetScreen extends ConsumerStatefulWidget {
   const SendTargetScreen({super.key});
 
@@ -22,6 +25,27 @@ class SendTargetScreen extends ConsumerStatefulWidget {
 class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
   String _number = '';
   String _code = '';
+  String? _contactName;
+  Timer? _lookupDebounce;
+
+  @override
+  void dispose() {
+    _lookupDebounce?.cancel();
+    super.dispose();
+  }
+
+  void _onNumberChanged() {
+    _lookupDebounce?.cancel();
+    if (_number.length < 10) {
+      setState(() => _contactName = null);
+      return;
+    }
+    _lookupDebounce = Timer(const Duration(milliseconds: 250), () async {
+      final name =
+          await ref.read(ussdEngineProvider).lookupContactName(_number);
+      if (mounted) setState(() => _contactName = name);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +53,9 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
     final flow = ref.watch(sendFlowProvider);
     final isCode = flow.target == PayTarget.merchantCode;
     final detected = detectNetwork(_number);
-    final canPay = isCode ? _code.length >= 4 : (_number.length == 10 && detected != null);
+    final canPay =
+        isCode ? _code.length >= 4 : (_number.length == 10 && detected != null);
+    final preview = flow.copyWith(recipientMsisdn: _number, merchantCode: _code);
 
     return Scaffold(
       appBar: zAppBar(context, title: '${l.pay} · ${rwf(flow.amount)} RWF'),
@@ -71,7 +97,7 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
                     ],
                   ),
                 ),
-                if (!isCode && detected != null) ...[
+                if (!isCode && detected != null)
                   Center(
                     child: Container(
                       padding:
@@ -82,7 +108,9 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
                         borderRadius: BorderRadius.circular(ZTokens.radiusPill),
                       ),
                       child: Text(
-                        '$detected number detected',
+                        preview.isCrossNetwork
+                            ? '$detected number · sent via eKash'
+                            : '$detected number',
                         style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -90,21 +118,21 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
                       ),
                     ),
                   ),
-                  if (flow.copyWith(recipientMsisdn: _number).isCrossNetwork)
-                    AccentBanner(
-                      title: l.crossNetworkViaEkash,
-                      subtitle: l.ekashRouteExplainer(
-                        flow.source == SourceNetwork.mtn ? 'MTN MoMo' : 'Airtel Money',
-                        'a $detected number',
-                      ),
-                      margin: const EdgeInsets.fromLTRB(24, 18, 24, 0),
-                    ),
-                ],
-                RailNote(
-                  l.manualFallbackHint,
-                  icon: Icons.phone_outlined,
-                  margin: const EdgeInsets.fromLTRB(24, 18, 24, 0),
-                ),
+                // Who you are about to pay — change the number if this
+                // isn't the person you meant.
+                if (!isCode && _contactName != null)
+                  AccentBanner(
+                    hint: 'In your contacts',
+                    title: _contactName!,
+                    subtitle: _formatNumber(_number),
+                    margin: const EdgeInsets.fromLTRB(24, 18, 24, 0),
+                  ),
+                if (!isCode && canPay && _contactName == null)
+                  const RailNote(
+                    'Not in your contacts. Double-check the number — the network will also show the registered name before you confirm with your PIN.',
+                    icon: Icons.info_outline,
+                    margin: EdgeInsets.fromLTRB(24, 18, 24, 0),
+                  ),
               ],
             ),
           ),
@@ -114,6 +142,7 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
                 if (_code.length < 8) _code += d;
               } else if (_number.length < 10) {
                 _number += d;
+                _onNumberChanged();
               }
             }),
             onBackspace: () => setState(() {
@@ -121,6 +150,7 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
                 if (_code.isNotEmpty) _code = _code.substring(0, _code.length - 1);
               } else if (_number.isNotEmpty) {
                 _number = _number.substring(0, _number.length - 1);
+                _onNumberChanged();
               }
             }),
           ),
@@ -128,11 +158,7 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 22),
             child: FilledButton(
               onPressed: canPay ? () => _pay(context) : null,
-              child: Text(
-                canPay
-                    ? '${l.pay} · ${flow.copyWith(recipientMsisdn: _number, merchantCode: _code).dialCode}'
-                    : l.pay,
-              ),
+              child: Text('${l.pay} ${rwf(flow.amount)} RWF'),
             ),
           ),
         ],
@@ -145,17 +171,13 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
     notifier.setNumber(_number);
     notifier.setMerchantCode(_code);
     final flow = ref.read(sendFlowProvider);
-    final code = flow.dialCode;
 
-    await ref.read(ussdEngineProvider).dialManually(code);
+    // Runs the session in place — the carrier popup takes over and asks
+    // for the PIN. Falls back to the prefilled dialer only if the call
+    // permission was just requested.
+    await ref.read(ussdEngineProvider).launchUssd(flow.dialCode);
 
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$code ready in your dialer — press call, then enter your PIN.'),
-        duration: const Duration(seconds: 5),
-      ),
-    );
     notifier.reset();
     context.go('/home');
   }

@@ -84,6 +84,43 @@ class UssdEngine {
   Future<void> dialManually(String code) =>
       _channel.invokeMethod<void>('dialUssd', {'code': code});
 
+  /// Runs the USSD session directly: the carrier's own dialog (menu or
+  /// "Enter PIN") pops up over the app. Returns false when CALL_PHONE is
+  /// not granted yet (the system permission dialog is shown instead).
+  Future<bool> callUssd(String code) async {
+    try {
+      return await _channel.invokeMethod<bool>('callUssd', {'code': code}) ??
+          false;
+    } on MissingPluginException {
+      return false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  /// One entry point for every pay/dial action: run the session directly
+  /// so the user only types their PIN; fall back to the prefilled dialer
+  /// when the permission is missing or the direct call fails.
+  Future<void> launchUssd(String code) async {
+    if (!await callUssd(code)) {
+      await dialManually(code);
+    }
+  }
+
+  /// On-device contact lookup so the send screen shows who the number
+  /// belongs to before paying. Returns null when unknown or the contacts
+  /// permission is not granted.
+  Future<String?> lookupContactName(String number) async {
+    try {
+      return await _channel
+          .invokeMethod<String>('lookupContactName', {'number': number});
+    } on MissingPluginException {
+      return null;
+    } on PlatformException {
+      return null;
+    }
+  }
+
   /// Runs a multi-step flow through the Accessibility-driven native
   /// session. Yields an update per carrier screen. Treat every automated
   /// menu as a scraper: any mismatch cancels the session fail-closed.

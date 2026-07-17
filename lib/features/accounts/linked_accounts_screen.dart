@@ -47,12 +47,12 @@ class LinkedAccountsScreen extends ConsumerWidget {
     return BillRow(
       leading: AvatarBox(i.initials, size: 42),
       title: i.name,
-      subtitle: i.code == null ? 'App only — no USSD code' : 'Tap the code to open your dialer',
+      subtitle: i.code == null ? 'App only — no USSD code' : 'Tap the code to run it',
       showChevron: false,
       trailing: i.code == null
           ? const StatusPill('App', kind: PillKind.wait)
           : GestureDetector(
-              onTap: () => ref.read(ussdEngineProvider).dialManually(i.code!),
+              onTap: () => ref.read(ussdEngineProvider).launchUssd(i.code!),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(

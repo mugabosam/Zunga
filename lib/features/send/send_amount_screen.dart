@@ -24,7 +24,6 @@ class _SendAmountScreenState extends ConsumerState<SendAmountScreen> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final flow = ref.watch(sendFlowProvider);
 
     return Scaffold(
       appBar: zAppBar(context, title: l.sendMoney),
@@ -53,16 +52,6 @@ class _SendAmountScreenState extends ConsumerState<SendAmountScreen> {
                     letterSpacing: 0.6,
                     color: ZTokens.ink3,
                   ),
-                ),
-                const SizedBox(height: 18),
-                // Sending from which SIM — decides *182*1*1# vs eKash.
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _sourceChip(l, SourceNetwork.mtn, 'MTN MoMo', flow.source),
-                    const SizedBox(width: 8),
-                    _sourceChip(l, SourceNetwork.airtel, 'Airtel Money', flow.source),
-                  ],
                 ),
               ],
             ),
@@ -94,27 +83,4 @@ class _SendAmountScreenState extends ConsumerState<SendAmountScreen> {
     );
   }
 
-  Widget _sourceChip(
-      AppLocalizations l, SourceNetwork network, String label, SourceNetwork current) {
-    final on = network == current;
-    return GestureDetector(
-      onTap: () => ref.read(sendFlowProvider.notifier).setSource(network),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-        decoration: BoxDecoration(
-          color: on ? ZTokens.ink : ZTokens.surface,
-          border: Border.all(color: on ? ZTokens.ink : ZTokens.line),
-          borderRadius: BorderRadius.circular(ZTokens.radiusPill),
-        ),
-        child: Text(
-          '${l.from} $label',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: on ? Colors.white : ZTokens.ink2,
-          ),
-        ),
-      ),
-    );
-  }
 }

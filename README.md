@@ -1,6 +1,6 @@
 # Zunga
 
-**Stop typing the `*` strings.** Zunga is a USSD shortcut layer for payments in Rwanda: enter the amount and a phone number or MoMo Pay code in a clean UI, tap Pay, and land in your phone's dialer with the right code prefilled — press call and type only your carrier PIN. **Zunga never holds, moves, or sees money.** The transfer happens entirely inside your carrier's own USSD session, and every fee you see there is the carrier's or eKash's, never Zunga's.
+**Stop typing the `*` strings.** Zunga is a USSD shortcut layer for payments in Rwanda: enter the amount and a phone number or MoMo Pay code in a clean UI, tap Pay, and the carrier's own session pops up right away — you type only your carrier PIN. **Zunga never holds, moves, or sees money.** The transfer happens entirely inside your carrier's own USSD session, and every fee you see there is the carrier's or eKash's, never Zunga's.
 
 - **Build spec:** [ZUNGA_BUILD.md](ZUNGA_BUILD.md) · **Design system:** [zunga-ui.html](zunga-ui.html)
 
@@ -21,7 +21,8 @@ Context: eKash is the national interoperability rail (RSwitch); since 14 July 20
 ## Design decisions
 
 - **No app PIN, no onboarding wall.** Zunga stores no money and no secrets — the only PIN that matters is your carrier's, typed in the carrier's own dialog.
-- **Hand-off, not automation.** Pay buttons open the dialer via `ACTION_DIAL` with the full code visible; the user always presses call themselves. No permission needed, nothing fires blind.
+- **It does the dialing for you.** Pay runs the session directly (`ACTION_CALL`); the carrier's popup appears over the app asking for your PIN. If the call permission isn't granted yet, it falls back to the prefilled dialer.
+- **It knows who you're paying.** The network is detected from the number (078/079 MTN, 072/073 Airtel) and from your actual SIMs — never asked. The contact's name shows before you pay, and the carrier repeats the registered name in its own confirm step.
 - **No fake data.** No mock balances, contacts, or transactions. The activity tab is an honest empty state until on-device SMS tracking ships (parser already in `lib/insights/`, allowlisted senders only, nothing leaves the phone).
 - **Codes are data.** Dial codes ship as Ed25519-signed JSON (`assets/configs/`) with a pinned key and rollback protection, so a changed carrier menu is fixed remotely — no app update. Inline templates (`*182*1*1*{msisdn}*{amount}#`) are confirmed on live SIMs and correctable the same way.
 

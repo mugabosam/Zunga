@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
+import android.provider.ContactsContract
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import androidx.core.app.ActivityCompat
@@ -35,6 +36,7 @@ object UssdChannel {
     private const val METHOD_CHANNEL = "rw.zunga/ussd"
     private const val EVENT_CHANNEL = "rw.zunga/ussd_session"
     private const val PERMISSION_REQUEST = 4821
+    private const val CONTACTS_PERMISSION_REQUEST = 4822
 
     fun register(activity: Activity, flutterEngine: FlutterEngine) {
         val messenger = flutterEngine.dartExecutor.binaryMessenger
@@ -49,6 +51,10 @@ object UssdChannel {
                     result,
                 )
                 "dialUssd" -> dialUssd(activity, call.argument<String>("code")!!, result)
+                "callUssd" -> callUssd(activity, call.argument<String>("code")!!, result)
+                "lookupContactName" -> lookupContactName(
+                    activity, call.argument<String>("number")!!, result,
+                )
                 "sendReply" -> {
                     var input = call.argument<String>("input") ?: ""
                     val ok = ZungaAccessibilityService.instance?.sendReply(input) ?: false
@@ -153,6 +159,51 @@ object UssdChannel {
         // ACTION_DIAL needs no permission: the user presses call themselves.
         val encoded = Uri.encode(code)
         activity.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$encoded")))
+        result.success(null)
+    }
+
+    /**
+     * Runs the USSD session directly: the carrier's own dialog (menu /
+     * "Enter PIN") pops up over the app — no dialer detour. Returns false
+     * when CALL_PHONE is not yet granted (the request dialog is shown;
+     * Dart falls back to the dialer for this attempt).
+     */
+    private fun callUssd(activity: Activity, code: String, result: MethodChannel.Result) {
+        if (!hasCallPermission(activity)) {
+            result.success(false)
+            return
+        }
+        val encoded = Uri.encode(code)
+        activity.startActivity(Intent(Intent.ACTION_CALL, Uri.parse("tel:$encoded")))
+        result.success(true)
+    }
+
+    /**
+     * Looks the number up in the user's own contacts (on-device only) so
+     * the send screen can show who they are about to pay. Returns null
+     * without READ_CONTACTS — and asks for it so the next lookup works.
+     */
+    private fun lookupContactName(activity: Activity, number: String, result: MethodChannel.Result) {
+        if (ContextCompat.checkSelfPermission(activity, Manifest.permission.READ_CONTACTS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                activity, arrayOf(Manifest.permission.READ_CONTACTS), CONTACTS_PERMISSION_REQUEST
+            )
+            result.success(null)
+            return
+        }
+        val uri = Uri.withAppendedPath(
+            ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(number)
+        )
+        activity.contentResolver.query(
+            uri, arrayOf(ContactsContract.PhoneLookup.DISPLAY_NAME), null, null, null
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                result.success(cursor.getString(0))
+                return
+            }
+        }
         result.success(null)
     }
 }

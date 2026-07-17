@@ -58,8 +58,8 @@ class HomeScreen extends ConsumerWidget {
                 ],
               ),
             ),
-            // Quick actions — each one lands in the dialer with the right
-            // code, or one tap away from it.
+            // Quick actions — each one runs the right code directly,
+            // or is one tap away from it.
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Row(
@@ -129,7 +129,7 @@ class HomeScreen extends ConsumerWidget {
 
   Widget _dialPill(WidgetRef ref, String code) {
     return GestureDetector(
-      onTap: () => ref.read(ussdEngineProvider).dialManually(code),
+      onTap: () => ref.read(ussdEngineProvider).launchUssd(code),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
@@ -153,7 +153,7 @@ class HomeScreen extends ConsumerWidget {
       {VoidCallback? onTap, String? dial}) {
     return Expanded(
       child: GestureDetector(
-        onTap: onTap ?? () => ref.read(ussdEngineProvider).dialManually(dial!),
+        onTap: onTap ?? () => ref.read(ussdEngineProvider).launchUssd(dial!),
         child: Column(
           children: [
             Container(

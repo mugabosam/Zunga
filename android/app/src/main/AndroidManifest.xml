@@ -6,6 +6,8 @@
     <!-- READ_SMS is requested at runtime under the Play "financial
          transaction tracking" use case (§8); the app has a full
          no-consent fallback mode. -->
+    <!-- Contact-name preview on the send screen; lookup is on-device only. -->
+    <uses-permission android:name="android.permission.READ_CONTACTS"/>
     <uses-permission android:name="android.permission.READ_SMS"/>
     <uses-permission android:name="android.permission.RECEIVE_SMS"/>
     <uses-permission android:name="android.permission.INTERNET"/>
