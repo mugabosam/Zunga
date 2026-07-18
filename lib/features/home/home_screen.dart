@@ -32,13 +32,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final wallet = ref.watch(activeWalletProvider);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light.copyWith(
+      value: SystemUiOverlayStyle.dark.copyWith(
         statusBarColor: Colors.transparent,
         systemNavigationBarColor: Colors.white,
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: ZTokens.bgDark,
+        backgroundColor: ZTokens.bg,
         drawer: const ZungaDrawer(),
         body: Column(
           children: [
@@ -59,12 +59,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               width: 44,
                               height: 44,
                               decoration: BoxDecoration(
+                                color: ZTokens.surface,
                                 borderRadius: BorderRadius.circular(15),
                                 border: Border.all(
-                                    color: ZTokens.lineDark, width: 1.5),
+                                    color: ZTokens.navy, width: 1.5),
                               ),
                               child: const Icon(Icons.menu,
-                                  size: 20, color: Colors.white),
+                                  size: 20, color: ZTokens.navy),
                             ),
                           ),
                         ),
@@ -75,10 +76,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
                       height: 240,
                       decoration: BoxDecoration(
-                        color: ZTokens.cardDark,
+                        gradient: ZTokens.navyGradient,
                         borderRadius: BorderRadius.circular(24),
-                        border:
-                            Border.all(color: ZTokens.lineDark, width: 1),
+                        boxShadow: ZTokens.shadow,
                       ),
                       child: Stack(
                         children: [
@@ -139,10 +139,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ],
                       ),
                     ),
-                    // Keypad — white digits on the dark surface.
+                    // Keypad — navy digits on the light surface.
                     Expanded(
                       child: ZKeypad(
-                        dark: true,
                         onDigit: (d) {
                           if (_digits.length < 8) {
                             setState(() => _digits += d);
@@ -167,6 +166,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x29232C63),
+                    blurRadius: 24,
+                    offset: Offset(0, -8),
+                  ),
+                ],
               ),
               child: SafeArea(
                 top: false,

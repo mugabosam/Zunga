@@ -21,9 +21,7 @@ class ZungaDrawer extends ConsumerWidget {
 
     return Drawer(
       backgroundColor: ZTokens.navy,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.horizontal(right: Radius.circular(28)),
-      ),
+      shape: const RoundedRectangleBorder(),
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
