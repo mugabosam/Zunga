@@ -42,65 +42,81 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       color: ZTokens.ink,
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Text('Z',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700)),
+                    child: const Text(
+                      'Z',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 22),
                   const Text(
                     'Your number',
                     style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: -0.44),
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.44,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   const Text(
                     'The MoMo or Airtel Money number you pay from. Stored on '
                     'this phone only.',
                     style: TextStyle(
-                        fontSize: 13.5, color: ZTokens.ink2, height: 1.55),
+                      fontSize: 13.5,
+                      color: ZTokens.ink2,
+                      height: 1.55,
+                    ),
                   ),
                 ],
               ),
             ),
             Expanded(
               child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      _number.isEmpty ? '07•• ••• •••' : _formatNumber(_number),
-                      style: TextStyle(
-                        fontSize: 34,
-                        fontWeight: FontWeight.w700,
-                        fontFeatures: ZTokens.numFeatures,
-                        color: _number.isEmpty ? ZTokens.ink3 : ZTokens.ink,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    if (detected != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: ZTokens.accentTint,
-                          borderRadius:
-                              BorderRadius.circular(ZTokens.radiusPill),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        _number.isEmpty
+                            ? '07•• ••• •••'
+                            : _formatNumber(_number),
+                        style: TextStyle(
+                          fontSize: 34,
+                          fontWeight: FontWeight.w700,
+                          fontFeatures: ZTokens.numFeatures,
+                          color: _number.isEmpty ? ZTokens.ink3 : ZTokens.ink,
                         ),
-                        child: Text(
-                          detected == 'MTN'
-                              ? 'MTN MoMo number'
-                              : 'Airtel Money number',
-                          style: const TextStyle(
+                      ),
+                      const SizedBox(height: 14),
+                      if (detected != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: ZTokens.accentTint,
+                            borderRadius: BorderRadius.circular(
+                              ZTokens.radiusPill,
+                            ),
+                          ),
+                          child: Text(
+                            detected == 'MTN'
+                                ? 'MTN MoMo number'
+                                : 'Airtel Money number',
+                            style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: ZTokens.accent),
+                              color: ZTokens.accent,
+                            ),
+                          ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -111,7 +127,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               onBackspace: () {
                 if (_number.isNotEmpty) {
                   setState(
-                      () => _number = _number.substring(0, _number.length - 1));
+                    () => _number = _number.substring(0, _number.length - 1),
+                  );
                 }
               },
             ),

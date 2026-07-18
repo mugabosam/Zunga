@@ -154,27 +154,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       const SizedBox(height: 12),
                       Center(
-                        child: Text.rich(
-                          TextSpan(
-                            text: _digits.isEmpty ? '0' : rwf(_amount),
-                            style: TextStyle(
-                              fontSize: 58,
-                              fontWeight: FontWeight.w600,
-                              fontFeatures: ZTokens.numFeatures,
-                              color: _digits.isEmpty
-                                  ? Colors.white.withValues(alpha: 0.55)
-                                  : Colors.white,
-                            ),
-                            children: [
-                              TextSpan(
-                                text: ' RWF',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.white.withValues(alpha: 0.5),
-                                ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text.rich(
+                            TextSpan(
+                              text: _digits.isEmpty ? '0' : rwf(_amount),
+                              style: TextStyle(
+                                fontSize: 58,
+                                fontWeight: FontWeight.w600,
+                                fontFeatures: ZTokens.numFeatures,
+                                color: _digits.isEmpty
+                                    ? Colors.white.withValues(alpha: 0.55)
+                                    : Colors.white,
                               ),
-                            ],
+                              children: [
+                                TextSpan(
+                                  text: ' RWF',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.white.withValues(alpha: 0.5),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
