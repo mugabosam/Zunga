@@ -43,14 +43,15 @@ const ekashInstitutions = [
   Institution('Chipper Cash', null),
 ];
 
-final institutionsProvider = Provider<List<Institution>>((ref) => ekashInstitutions);
+final institutionsProvider = Provider<List<Institution>>(
+  (ref) => ekashInstitutions,
+);
 
 /// Wallet menu roots — the two carriers' own USSD entry points.
 const mtnMenuRoot = '*182#';
 const airtelMenuRoot = '*500#';
 
-/// On-demand balance checks (never auto-polled). MTN's balance path is
-/// the documented *182*6*1#; Airtel opens the Airtel Money menu — its
-/// deep balance code ships via the signed config once verified on SIM.
+/// On-demand balance checks (never auto-polled), both confirmed on
+/// live SIMs: MTN *182*6*1#, Airtel *500*5*1*1#.
 const mtnBalanceCode = '*182*6*1#';
-const airtelBalanceCode = '*500#';
+const airtelBalanceCode = '*500*5*1*1#';

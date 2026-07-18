@@ -55,8 +55,8 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
   void _onInputChanged() {
     _lookupDebounce?.cancel();
     final flow = ref.read(sendFlowProvider);
-    final isPhone = flow.route == PayRoute.mtnNumber ||
-        flow.route == PayRoute.airtelNumber;
+    final isPhone =
+        flow.route == PayRoute.mtnNumber || flow.route == PayRoute.airtelNumber;
     if (!isPhone || flow.digits.length != 10) {
       setState(() {
         _name = null;
@@ -72,8 +72,9 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
   Future<void> _lookupName() async {
     final number = ref.read(sendFlowProvider).digits;
 
-    final registered =
-        await ref.read(nameLookupProvider).registeredName(number);
+    final registered = await ref
+        .read(nameLookupProvider)
+        .registeredName(number);
     if (!mounted || number != ref.read(sendFlowProvider).digits) return;
     if (registered != null) {
       setState(() {
@@ -105,7 +106,9 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
       });
       return;
     }
-    final contact = await ref.read(ussdEngineProvider).lookupContactName(number);
+    final contact = await ref
+        .read(ussdEngineProvider)
+        .lookupContactName(number);
     if (!mounted || number != ref.read(sendFlowProvider).digits) return;
     setState(() {
       _name = contact;
@@ -124,8 +127,9 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
       resizeToAvoidBottomInset: true,
       appBar: zAppBar(
         context,
-        title:
-            flow.amount > 0 ? '${l.pay} ${rwf(flow.amount)} RWF' : l.sendMoney,
+        title: flow.amount > 0
+            ? '${l.pay} ${rwf(flow.amount)} RWF'
+            : l.sendMoney,
       ),
       body: Column(
         children: [
@@ -180,7 +184,9 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
                     child: Container(
                       margin: const EdgeInsets.fromLTRB(24, 14, 24, 0),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 11),
+                        horizontal: 14,
+                        vertical: 11,
+                      ),
                       decoration: BoxDecoration(
                         color: ZTokens.accentTint,
                         borderRadius: BorderRadius.circular(14),
@@ -194,8 +200,11 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
                               color: ZTokens.accent,
                               borderRadius: BorderRadius.circular(9),
                             ),
-                            child: const Icon(Icons.check,
-                                size: 14, color: Colors.white),
+                            child: const Icon(
+                              Icons.check,
+                              size: 14,
+                              color: Colors.white,
+                            ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -203,13 +212,16 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
                               TextSpan(
                                 text: 'Detected  ',
                                 style: const TextStyle(
-                                    fontSize: 12, color: ZTokens.ink2),
+                                  fontSize: 12,
+                                  color: ZTokens.ink2,
+                                ),
                                 children: [
                                   TextSpan(
                                     text: routeLabelOf(flow.route),
                                     style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: ZTokens.ink),
+                                      fontWeight: FontWeight.w600,
+                                      color: ZTokens.ink,
+                                    ),
                                   ),
                                   if (flow.isCrossNetwork)
                                     const TextSpan(text: '  ·  eKash'),
@@ -220,9 +232,10 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
                           const Text(
                             'Change',
                             style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                                color: ZTokens.accent),
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: ZTokens.accent,
+                            ),
                           ),
                         ],
                       ),
@@ -231,23 +244,29 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
                 // Bank picker (bank route).
                 if (flow.route == PayRoute.bank) ...[
                   GroupLabel('Choose the bank'),
-                  RowGroup(children: [
-                    for (final bank in ref
-                        .watch(institutionsProvider)
-                        .where((i) => !i.isWallet && i.code != null))
-                      BillRow(
-                        leading: AvatarBox(bank.initials, size: 40),
-                        title: bank.name,
-                        showChevron: false,
-                        trailing: flow.bankCode == bank.code
-                            ? const Icon(Icons.check_circle,
-                                color: ZTokens.accent, size: 20)
-                            : null,
-                        onTap: () => ref
-                            .read(sendFlowProvider.notifier)
-                            .setBankCode(bank.code!),
-                      ),
-                  ]),
+                  RowGroup(
+                    children: [
+                      for (final bank
+                          in ref
+                              .watch(institutionsProvider)
+                              .where((i) => !i.isWallet && i.code != null))
+                        BillRow(
+                          leading: AvatarBox(bank.initials, size: 40),
+                          title: bank.name,
+                          showChevron: false,
+                          trailing: flow.bankCode == bank.code
+                              ? const Icon(
+                                  Icons.check_circle,
+                                  color: ZTokens.accent,
+                                  size: 20,
+                                )
+                              : null,
+                          onTap: () => ref
+                              .read(sendFlowProvider.notifier)
+                              .setBankCode(bank.code!),
+                        ),
+                    ],
+                  ),
                 ],
                 if (_lookingUp)
                   const Padding(
@@ -284,16 +303,18 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
                 // Recents — one tap fills the input.
                 if (flow.input.isEmpty && recents.isNotEmpty) ...[
                   GroupLabel('Recent'),
-                  RowGroup(children: [
-                    for (final r in recents.take(5))
-                      BillRow(
-                        leading: AvatarBox(r.initials, size: 42),
-                        title: r.name ?? _formatNumber(r.msisdn),
-                        subtitle: r.network,
-                        showChevron: false,
-                        onTap: () => _controller.text = r.msisdn,
-                      ),
-                  ]),
+                  RowGroup(
+                    children: [
+                      for (final r in recents.take(5))
+                        BillRow(
+                          leading: AvatarBox(r.initials, size: 42),
+                          title: r.name ?? _formatNumber(r.msisdn),
+                          subtitle: r.network,
+                          showChevron: false,
+                          onTap: () => _controller.text = r.msisdn,
+                        ),
+                    ],
+                  ),
                 ],
               ],
             ),
@@ -307,9 +328,9 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
               ),
               child: FilledButton(
                 onPressed: flow.readyToPay ? () => _pay(context) : null,
-                child: Text(flow.amount > 0
-                    ? '${l.pay} ${rwf(flow.amount)} RWF'
-                    : l.pay),
+                child: Text(
+                  flow.amount > 0 ? '${l.pay} ${rwf(flow.amount)} RWF' : l.pay,
+                ),
               ),
             ),
           ),
@@ -326,40 +347,54 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (sheet) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(top: 12, bottom: 16),
-              decoration: BoxDecoration(
-                color: ZTokens.line,
-                borderRadius: BorderRadius.circular(2),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(sheet).viewInsets.bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(top: 12, bottom: 16),
+                decoration: BoxDecoration(
+                  color: ZTokens.line,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-            const Text('Send as',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            for (final route in const [
-              PayRoute.mtnNumber,
-              PayRoute.airtelNumber,
-              PayRoute.momoPay,
-              PayRoute.meter,
-              PayRoute.bank,
-            ])
-              ListTile(
-                title: Text(routeLabelOf(route),
+              const Text(
+                'Send as',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              for (final route in const [
+                PayRoute.mtnNumber,
+                PayRoute.airtelNumber,
+                PayRoute.momoPay,
+                PayRoute.meter,
+                PayRoute.bank,
+              ])
+                ListTile(
+                  title: Text(
+                    routeLabelOf(route),
                     style: const TextStyle(
-                        fontSize: 14.5, fontWeight: FontWeight.w600)),
-                trailing: route == flow.route
-                    ? const Icon(Icons.check_circle,
-                        color: ZTokens.accent, size: 20)
-                    : null,
-                onTap: () => Navigator.pop(sheet, route),
-              ),
-            const SizedBox(height: 10),
-          ],
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  trailing: route == flow.route
+                      ? const Icon(
+                          Icons.check_circle,
+                          color: ZTokens.accent,
+                          size: 20,
+                        )
+                      : null,
+                  onTap: () => Navigator.pop(sheet, route),
+                ),
+              const SizedBox(height: 10),
+            ],
+          ),
         ),
       ),
     );
@@ -383,31 +418,39 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
     }
 
     final settings = ref.read(settingsProvider);
-    final isPhone = flow.route == PayRoute.mtnNumber ||
-        flow.route == PayRoute.airtelNumber;
+    final isPhone =
+        flow.route == PayRoute.mtnNumber || flow.route == PayRoute.airtelNumber;
 
     if (settings.saveRecents && isPhone) {
-      await ref.read(recentsProvider.notifier).remember(RecentRecipient(
-            msisdn: flow.digits,
-            name: _name,
-            network: detectNetwork(flow.digits),
-            lastPaidAt: DateTime.now(),
-          ));
+      await ref
+          .read(recentsProvider.notifier)
+          .remember(
+            RecentRecipient(
+              msisdn: flow.digits,
+              name: _name,
+              network: detectNetwork(flow.digits),
+              lastPaidAt: DateTime.now(),
+            ),
+          );
     }
 
     // Lifecycle §2.1: awaiting_pin → pending_confirmation; `confirmed`
     // only when the success string or carrier SMS proves it.
     TxRecord? tx;
     if (settings.saveTransactions) {
-      tx = await ref.read(transactionsProvider.notifier).record(TxRecord(
-            id: DateTime.now().microsecondsSinceEpoch.toString(),
-            msisdn: flow.digits,
-            counterpartyName: _name,
-            amount: flow.amount,
-            network: detectNetwork(flow.digits) ?? routeLabelOf(flow.route),
-            status: TxStatus.awaitingPin,
-            createdAt: DateTime.now(),
-          ));
+      tx = await ref
+          .read(transactionsProvider.notifier)
+          .record(
+            TxRecord(
+              id: DateTime.now().microsecondsSinceEpoch.toString(),
+              msisdn: flow.digits,
+              counterpartyName: _name,
+              amount: flow.amount,
+              network: detectNetwork(flow.digits) ?? routeLabelOf(flow.route),
+              status: TxStatus.awaitingPin,
+              createdAt: DateTime.now(),
+            ),
+          );
     }
 
     await ref.read(ussdEngineProvider).launchUssd(flow.dialCode);
@@ -423,10 +466,9 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
   }
 
   Future<bool?> _showCoachMark(BuildContext context, SendFlowState flow) {
-    final carrier =
-        flow.route == PayRoute.airtelNumber && !flow.isCrossNetwork
-            ? 'Airtel'
-            : 'MTN';
+    final carrier = flow.route == PayRoute.airtelNumber && !flow.isCrossNetwork
+        ? 'Airtel'
+        : 'MTN';
     return showModalBottomSheet<bool>(
       context: context,
       backgroundColor: ZTokens.surface,
@@ -434,8 +476,13 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (sheet) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            24,
+            12,
+            24,
+            24 + MediaQuery.of(sheet).viewInsets.bottom,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -456,13 +503,18 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
                   color: ZTokens.accentTint,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Icon(Icons.lock_outline,
-                    color: ZTokens.accent, size: 24),
+                child: const Icon(
+                  Icons.lock_outline,
+                  color: ZTokens.accent,
+                  size: 24,
+                ),
               ),
               Text(
                 '$carrier will ask for your PIN',
-                style:
-                    const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 8),
               const Text(
@@ -470,7 +522,10 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
                 'never to Zunga.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                    fontSize: 13.5, color: ZTokens.ink2, height: 1.55),
+                  fontSize: 13.5,
+                  color: ZTokens.ink2,
+                  height: 1.55,
+                ),
               ),
               const SizedBox(height: 20),
               FilledButton(

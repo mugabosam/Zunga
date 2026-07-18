@@ -45,6 +45,11 @@
           "steps": [],
           "success_contains": []
         },
+        "balance_check": {
+          "root": "*500*5*1*1#",
+          "steps": [],
+          "success_contains": []
+        },
         "send_cross_network_ekash": {
           "root": "*182*1*2#",
           "steps": [],
