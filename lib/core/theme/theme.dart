@@ -3,18 +3,18 @@ import 'package:flutter/services.dart';
 
 import 'tokens.dart';
 
-/// Light mode first (per spec). Background #FAFAF8, ink #141517,
-/// single accent #0E6E5C, Inter, 16px radii.
+/// Navy/orange system: #F6F6FA background, white cards with soft
+/// shadows, navy #232C63 primary, orange #EE7B3F accent, Poppins.
 ThemeData buildZungaTheme() {
   const scheme = ColorScheme.light(
     primary: ZTokens.accent,
     onPrimary: Colors.white,
-    secondary: ZTokens.ink,
+    secondary: ZTokens.navy,
     onSecondary: Colors.white,
     surface: ZTokens.surface,
     onSurface: ZTokens.ink,
     outline: ZTokens.line,
-    error: Color(0xFFB3261E),
+    error: Color(0xFFD84A3A),
   );
 
   final base = ThemeData(
@@ -26,6 +26,10 @@ ThemeData buildZungaTheme() {
   );
 
   return base.copyWith(
+    textTheme: base.textTheme.apply(
+      bodyColor: ZTokens.ink,
+      displayColor: ZTokens.ink,
+    ),
     appBarTheme: const AppBarTheme(
       backgroundColor: ZTokens.bg,
       foregroundColor: ZTokens.ink,
@@ -36,7 +40,6 @@ ThemeData buildZungaTheme() {
         fontFamily: ZTokens.fontFamily,
         fontSize: 17,
         fontWeight: FontWeight.w600,
-        letterSpacing: -0.17,
         color: ZTokens.ink,
       ),
       systemOverlayStyle: SystemUiOverlayStyle(
@@ -52,17 +55,27 @@ ThemeData buildZungaTheme() {
       space: 1,
     ),
     filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(
-        backgroundColor: ZTokens.accent,
-        foregroundColor: Colors.white,
-        minimumSize: const Size.fromHeight(56),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ZTokens.radius),
+      style: ButtonStyle(
+        backgroundColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.disabled)
+              ? ZTokens.accent.withValues(alpha: 0.35)
+              : ZTokens.accent,
         ),
-        textStyle: const TextStyle(
-          fontFamily: ZTokens.fontFamily,
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
+        foregroundColor: const WidgetStatePropertyAll(Colors.white),
+        minimumSize: const WidgetStatePropertyAll(Size.fromHeight(56)),
+        elevation: const WidgetStatePropertyAll(0),
+        shadowColor: const WidgetStatePropertyAll(Colors.transparent),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(ZTokens.radiusButton),
+          ),
+        ),
+        textStyle: const WidgetStatePropertyAll(
+          TextStyle(
+            fontFamily: ZTokens.fontFamily,
+            fontSize: 15.5,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     ),
@@ -71,13 +84,14 @@ ThemeData buildZungaTheme() {
         backgroundColor: ZTokens.surface,
         foregroundColor: ZTokens.ink,
         minimumSize: const Size.fromHeight(56),
-        side: const BorderSide(color: ZTokens.line),
+        side: BorderSide.none,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ZTokens.radius),
+          borderRadius: BorderRadius.circular(ZTokens.radiusButton),
         ),
         textStyle: const TextStyle(
           fontFamily: ZTokens.fontFamily,
-          fontSize: 16,
+          fontSize: 15.5,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -87,7 +101,7 @@ ThemeData buildZungaTheme() {
         foregroundColor: ZTokens.ink2,
         textStyle: const TextStyle(
           fontFamily: ZTokens.fontFamily,
-          fontSize: 14.5,
+          fontSize: 14,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -100,6 +114,18 @@ ThemeData buildZungaTheme() {
             ? ZTokens.accent
             : ZTokens.line,
       ),
+    ),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: ZTokens.navy,
+      contentTextStyle: const TextStyle(
+        fontFamily: ZTokens.fontFamily,
+        fontSize: 13.5,
+        color: Colors.white,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(ZTokens.radiusSmall),
+      ),
+      behavior: SnackBarBehavior.floating,
     ),
   );
 }

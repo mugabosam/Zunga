@@ -14,14 +14,14 @@ class ZBackButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap ?? () => context.pop(),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(13),
       child: Container(
-        width: 36,
-        height: 36,
+        width: 38,
+        height: 38,
         decoration: BoxDecoration(
           color: ZTokens.surface,
-          border: Border.all(color: ZTokens.line),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(13),
+          boxShadow: ZTokens.shadowSoft,
         ),
         child: Icon(icon, size: 16, color: ZTokens.ink),
       ),

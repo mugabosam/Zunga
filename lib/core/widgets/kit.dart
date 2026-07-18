@@ -26,8 +26,8 @@ class ZCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: ZTokens.surface,
-        border: Border.all(color: ZTokens.line),
         borderRadius: BorderRadius.circular(radius),
+        boxShadow: ZTokens.shadowSoft,
       ),
       child: child,
     );
@@ -70,20 +70,19 @@ class AvatarBox extends StatelessWidget {
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: dark ? ZTokens.ink : ZTokens.bg,
-        border: dark ? null : Border.all(color: ZTokens.line),
-        borderRadius: BorderRadius.circular(size / 3),
+        color: dark ? ZTokens.navy : ZTokens.bg,
+        borderRadius: BorderRadius.circular(size * 0.36),
       ),
       child: Text(
         initials,
         style: TextStyle(
-          fontSize: size * 0.31,
+          fontSize: size * 0.3,
           fontWeight: FontWeight.w600,
           color: dark
               ? Colors.white
               : accent
                   ? ZTokens.accent
-                  : ZTokens.ink2,
+                  : ZTokens.navy,
         ),
       ),
     );
@@ -128,10 +127,9 @@ class BillRow extends StatelessWidget {
                   height: 42,
                   decoration: BoxDecoration(
                     color: ZTokens.bg,
-                    border: Border.all(color: ZTokens.line),
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(15),
                   ),
-                  child: Icon(icon, size: 20, color: ZTokens.ink),
+                  child: Icon(icon, size: 20, color: ZTokens.navy),
                 ),
             const SizedBox(width: 14),
             Expanded(
@@ -205,16 +203,15 @@ class StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (bg, fg, border) = switch (kind) {
-      PillKind.ok => (ZTokens.accentTint, ZTokens.accent, Colors.transparent),
-      PillKind.wait => (ZTokens.bg, ZTokens.ink3, ZTokens.line),
-      PillKind.connect => (ZTokens.ink, Colors.white, Colors.transparent),
+    final (bg, fg) = switch (kind) {
+      PillKind.ok => (ZTokens.accentTint, ZTokens.accent),
+      PillKind.wait => (ZTokens.bg, ZTokens.ink2),
+      PillKind.connect => (ZTokens.navy, Colors.white),
     };
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 4),
       decoration: BoxDecoration(
         color: bg,
-        border: Border.all(color: border),
         borderRadius: BorderRadius.circular(ZTokens.radiusPill),
       ),
       child: Text(
@@ -409,11 +406,11 @@ class SegControl extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-      padding: const EdgeInsets.all(3),
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: ZTokens.surface,
-        border: Border.all(color: ZTokens.line),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: ZTokens.shadowSoft,
       ),
       child: Row(
         children: [
@@ -424,8 +421,8 @@ class SegControl extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 9),
                   decoration: BoxDecoration(
-                    color: i == selected ? ZTokens.ink : Colors.transparent,
-                    borderRadius: BorderRadius.circular(9),
+                    color: i == selected ? ZTokens.navy : Colors.transparent,
+                    borderRadius: BorderRadius.circular(11),
                   ),
                   alignment: Alignment.center,
                   child: Text(
@@ -473,7 +470,9 @@ class ZKeypad extends StatelessWidget {
                   Text(
                     label,
                     style: const TextStyle(
-                        fontSize: 23, fontWeight: FontWeight.w500),
+                        fontSize: 22,
+                        fontWeight: FontWeight.w500,
+                        color: ZTokens.navy),
                   ),
             ),
           ),
@@ -534,9 +533,9 @@ class PinDots extends StatelessWidget {
             margin: const EdgeInsets.symmetric(horizontal: 7),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: i < filled ? ZTokens.ink : Colors.transparent,
+              color: i < filled ? ZTokens.navy : Colors.transparent,
               border: Border.all(
-                color: i < filled ? ZTokens.ink : ZTokens.line,
+                color: i < filled ? ZTokens.navy : ZTokens.line,
                 width: 1.5,
               ),
             ),

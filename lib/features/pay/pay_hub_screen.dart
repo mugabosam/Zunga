@@ -7,7 +7,6 @@ import '../../core/widgets/kit.dart';
 import '../../core/widgets/scaffold.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ussd/providers.dart';
-import '../send/send_flow_state.dart';
 
 /// Pay hub — every real service, each one ending in a dialer hand-off.
 class PayHubScreen extends ConsumerWidget {
@@ -31,19 +30,13 @@ class PayHubScreen extends ConsumerWidget {
                 icon: Icons.arrow_forward,
                 title: l.sendToMobile,
                 subtitle: 'MTN MoMo · Airtel Money',
-                onTap: () {
-                  ref.read(sendFlowProvider.notifier).setTarget(PayTarget.phoneNumber);
-                  context.push('/send');
-                },
+                onTap: () => context.push('/send'),
               ),
               BillRow(
                 icon: Icons.storefront_outlined,
                 title: l.payMerchant,
                 subtitle: 'MoMo Pay',
-                onTap: () {
-                  ref.read(sendFlowProvider.notifier).setTarget(PayTarget.merchantCode);
-                  context.push('/send');
-                },
+                onTap: () => context.push('/send'),
               ),
               BillRow(
                 icon: Icons.account_balance_outlined,

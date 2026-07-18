@@ -77,11 +77,21 @@ class _NavShell extends StatelessWidget {
       (Icons.person_outline, l.navProfile),
     ];
     return Scaffold(
+      extendBody: true,
       body: shell,
       bottomNavigationBar: Container(
+        clipBehavior: Clip.antiAlias,
         decoration: const BoxDecoration(
           color: ZTokens.surface,
-          border: Border(top: BorderSide(color: ZTokens.line)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x2E232C63),
+              blurRadius: 24,
+              offset: Offset(0, -8),
+              spreadRadius: -14,
+            ),
+          ],
         ),
         child: SafeArea(
           child: SizedBox(
@@ -99,7 +109,7 @@ class _NavShell extends StatelessWidget {
                             items[i].$1,
                             size: 22,
                             color: i == shell.currentIndex
-                                ? ZTokens.accent
+                                ? ZTokens.navy
                                 : ZTokens.ink3,
                           ),
                           const SizedBox(height: 5),
@@ -107,9 +117,11 @@ class _NavShell extends StatelessWidget {
                             items[i].$2,
                             style: TextStyle(
                               fontSize: 11,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: i == shell.currentIndex
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
                               color: i == shell.currentIndex
-                                  ? ZTokens.accent
+                                  ? ZTokens.navy
                                   : ZTokens.ink3,
                             ),
                           ),

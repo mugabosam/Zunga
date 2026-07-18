@@ -1,94 +1,129 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/data/profile.dart';
+import '../../core/data/sample_data.dart';
 import '../../ussd/providers.dart';
 
-/// The whole product in one file: turn what the user typed into the
-/// right USSD dial string, run the session, and let the carrier's own
-/// popup ask for the PIN. Zunga never touches the money.
+/// Smart destination routing: one universal input, the route detected
+/// as the user types, always overridable, never a guess when ambiguous.
 ///
 /// Codes (verified, July 2026):
 ///  - MTN → MTN:            *182*1*1*number*amount#  (only the PIN left)
 ///  - Cross-network (eKash): *182*1*2#   — works from ANY network
 ///  - MoMo Pay merchant:     *182*8*1*code#
 ///  - Airtel → Airtel:       *500#  (Airtel Money menu)
-enum PayTarget { phoneNumber, merchantCode }
+///  - Bank via eKash:        the bank's own access code (bank picker)
+enum PayRoute { mtnNumber, airtelNumber, momoPay, meter, bank, incomplete }
 
 enum SimNetwork { mtn, airtel }
+
+/// What the raw input most likely is. 5–6 digits → merchant code;
+/// 10 digits starting 078/079/072/073 → phone; other digit runs → meter
+/// or bank account by length.
+PayRoute detectRoute(String input) {
+  final digits = input.replaceAll(RegExp(r'\D'), '');
+  final normalized =
+      digits.startsWith('250') ? '0${digits.substring(3)}' : digits;
+  if (normalized.length >= 5 && normalized.length <= 6) return PayRoute.momoPay;
+  if (normalized.length == 10 &&
+      (normalized.startsWith('078') || normalized.startsWith('079'))) {
+    return PayRoute.mtnNumber;
+  }
+  if (normalized.length == 10 &&
+      (normalized.startsWith('072') || normalized.startsWith('073'))) {
+    return PayRoute.airtelNumber;
+  }
+  if (normalized.length >= 10 &&
+      normalized.length <= 11 &&
+      !normalized.startsWith('07')) {
+    return PayRoute.meter;
+  }
+  if (normalized.length >= 12) return PayRoute.bank;
+  return PayRoute.incomplete;
+}
+
+String routeLabelOf(PayRoute route) => switch (route) {
+      PayRoute.mtnNumber => 'MTN number',
+      PayRoute.airtelNumber => 'Airtel number',
+      PayRoute.momoPay => 'MoMo Pay merchant',
+      PayRoute.meter => 'EUCL meter',
+      PayRoute.bank => 'Bank account',
+      PayRoute.incomplete => '',
+    };
 
 class SendFlowState {
   const SendFlowState({
     this.amount = 0,
-    this.target = PayTarget.phoneNumber,
+    this.input = '',
+    this.routeOverride,
+    this.bankCode,
     this.simNetworks = const {SimNetwork.mtn},
-    this.recipientMsisdn = '',
-    this.merchantCode = '',
   });
 
   final int amount;
-  final PayTarget target;
 
-  /// Networks of the SIMs actually in the phone, detected via
-  /// SubscriptionManager — never asked from the user. Defaults to MTN
-  /// (the majority network) until detection completes or when the
-  /// READ_PHONE_STATE permission is missing.
+  /// The universal destination input — number, code, meter or account.
+  final String input;
+
+  /// User tapped "Change" on the detection chip.
+  final PayRoute? routeOverride;
+
+  /// eKash access code of the bank chosen in the picker (bank route).
+  final String? bankCode;
+
+  /// Networks of the registered number / SIMs — never asked.
   final Set<SimNetwork> simNetworks;
-  final String recipientMsisdn;
-  final String merchantCode;
 
-  String? get recipientNetwork => detectNetwork(recipientMsisdn);
+  PayRoute get route => routeOverride ?? detectRoute(input);
 
-  /// Cross-network when no SIM in the phone matches the recipient's
-  /// network — then eKash (*182*1*2#) is the route.
-  bool get isCrossNetwork {
-    return switch (recipientNetwork) {
-      'MTN' => !simNetworks.contains(SimNetwork.mtn),
-      'Airtel' => !simNetworks.contains(SimNetwork.airtel),
-      _ => false,
-    };
+  String get digits {
+    final d = input.replaceAll(RegExp(r'\D'), '');
+    return d.startsWith('250') ? '0${d.substring(3)}' : d;
   }
 
-  /// The exact session string. The user never sees it — they only meet
-  /// the carrier's popup asking for their PIN.
-  String get dialCode {
-    if (target == PayTarget.merchantCode) {
-      // MoMo Pay: signage format *182*8*1*code# pre-fills the code.
-      return merchantCode.isEmpty ? '*182*8*1#' : '*182*8*1*$merchantCode#';
-    }
-    final digits = recipientMsisdn.replaceAll(RegExp(r'\D'), '');
-    if (isCrossNetwork) {
-      return '*182*1*2#';
-    }
-    if (recipientNetwork == 'Airtel') {
-      // Airtel → Airtel goes through the Airtel Money menu.
-      return '*500#';
-    }
-    // MTN → MTN inline shortcut leaves only the PIN to type.
-    if (digits.isNotEmpty && amount > 0) {
-      return '*182*1*1*$digits*$amount#';
-    }
-    return '*182*1*1#';
-  }
+  bool get isCrossNetwork => switch (route) {
+        PayRoute.mtnNumber => !simNetworks.contains(SimNetwork.mtn),
+        PayRoute.airtelNumber => !simNetworks.contains(SimNetwork.airtel),
+        _ => false,
+      };
 
-  String get routeLabel {
-    if (target == PayTarget.merchantCode) return 'MoMo Pay';
-    if (isCrossNetwork) return 'via eKash';
-    return recipientNetwork == 'Airtel' ? 'Airtel → Airtel' : 'MTN → MTN';
-  }
+  bool get readyToPay => switch (route) {
+        PayRoute.mtnNumber || PayRoute.airtelNumber => digits.length == 10,
+        PayRoute.momoPay => digits.length >= 5,
+        PayRoute.meter => digits.length >= 10,
+        PayRoute.bank => bankCode != null,
+        PayRoute.incomplete => false,
+      };
+
+  /// The session string. Never shown — buttons run it.
+  String get dialCode => switch (route) {
+        PayRoute.momoPay => '*182*8*1*$digits#',
+        PayRoute.mtnNumber when isCrossNetwork => '*182*1*2#',
+        PayRoute.mtnNumber =>
+          amount > 0 ? '*182*1*1*$digits*$amount#' : '*182*1*1#',
+        PayRoute.airtelNumber when isCrossNetwork => '*182*1*2#',
+        PayRoute.airtelNumber => '*500#',
+        // EUCL deep path ships via the signed config once verified on a
+        // live SIM; until then the MoMo menu carries the token purchase.
+        PayRoute.meter => mtnMenuRoot,
+        PayRoute.bank => bankCode ?? '*182*1*2#',
+        PayRoute.incomplete => mtnMenuRoot,
+      };
 
   SendFlowState copyWith({
     int? amount,
-    PayTarget? target,
+    String? input,
+    PayRoute? routeOverride,
+    bool clearOverride = false,
+    String? bankCode,
     Set<SimNetwork>? simNetworks,
-    String? recipientMsisdn,
-    String? merchantCode,
   }) {
     return SendFlowState(
       amount: amount ?? this.amount,
-      target: target ?? this.target,
+      input: input ?? this.input,
+      routeOverride: clearOverride ? null : routeOverride ?? this.routeOverride,
+      bankCode: bankCode ?? this.bankCode,
       simNetworks: simNetworks ?? this.simNetworks,
-      recipientMsisdn: recipientMsisdn ?? this.recipientMsisdn,
-      merchantCode: merchantCode ?? this.merchantCode,
     );
   }
 }
@@ -107,8 +142,7 @@ class SendFlowNotifier extends Notifier<SendFlowState> {
     );
   }
 
-  /// Fallback only — used when no number is registered (should not
-  /// happen behind the /register gate, but never guess silently).
+  /// Fallback only — used when no number is registered.
   Future<void> _detectSims() async {
     final sims = await ref.read(ussdEngineProvider).getSimAccounts();
     final networks = <SimNetwork>{};
@@ -124,11 +158,13 @@ class SendFlowNotifier extends Notifier<SendFlowState> {
 
   void setAmount(int amount) => state = state.copyWith(amount: amount);
 
-  void setTarget(PayTarget target) => state = state.copyWith(target: target);
+  void setInput(String input) =>
+      state = state.copyWith(input: input, clearOverride: true);
 
-  void setNumber(String msisdn) => state = state.copyWith(recipientMsisdn: msisdn);
+  void overrideRoute(PayRoute route) =>
+      state = state.copyWith(routeOverride: route);
 
-  void setMerchantCode(String code) => state = state.copyWith(merchantCode: code);
+  void setBankCode(String code) => state = state.copyWith(bankCode: code);
 
   void reset() => state = SendFlowState(simNetworks: state.simNetworks);
 }
@@ -138,15 +174,9 @@ final sendFlowProvider =
 
 /// Rwanda MSISDN prefix → network. 078/079 MTN, 072/073 Airtel.
 String? detectNetwork(String msisdn) {
-  final digits = msisdn.replaceAll(RegExp(r'\D'), '');
-  final local = digits.startsWith('250') ? digits.substring(3) : digits;
-  if (local.startsWith('78') || local.startsWith('79') ||
-      local.startsWith('078') || local.startsWith('079')) {
-    return 'MTN';
-  }
-  if (local.startsWith('72') || local.startsWith('73') ||
-      local.startsWith('072') || local.startsWith('073')) {
-    return 'Airtel';
-  }
-  return null;
+  return switch (detectRoute(msisdn)) {
+    PayRoute.mtnNumber => 'MTN',
+    PayRoute.airtelNumber => 'Airtel',
+    _ => null,
+  };
 }

@@ -10,9 +10,8 @@ import '../../l10n/app_localizations.dart';
 import '../../ussd/providers.dart';
 import '../send/send_flow_state.dart';
 
-/// Screen 01 — keypad-first home. Calm, instant, thumb-reachable:
-/// wallet badge on top, giant amount, keypad, Balance + Send. No
-/// balance number, no feed — depth lives one tab away.
+/// Screen 01 — keypad-first home. Navy gradient pay card, keypad,
+/// Balance + Pay. Calm, instant, thumb-reachable.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -35,115 +34,201 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Top bar: active wallet badge (tap to switch) + avatar.
+            // Top bar: wallet pill (tap to switch) + avatar.
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   GestureDetector(
                     onTap: () => _switchWallet(context, wallet),
                     child: Container(
-                      padding: const EdgeInsets.fromLTRB(8, 7, 14, 7),
+                      padding: const EdgeInsets.fromLTRB(8, 8, 14, 8),
                       decoration: BoxDecoration(
                         color: ZTokens.surface,
-                        border: Border.all(color: ZTokens.line),
                         borderRadius: BorderRadius.circular(ZTokens.radiusPill),
+                        boxShadow: ZTokens.shadowSoft,
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          AvatarBox(wallet == 'MTN' ? 'M' : 'A', size: 26),
+                          Container(
+                            width: 20,
+                            height: 20,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: ZTokens.navy,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              wallet == 'MTN' ? 'M' : 'A',
+                              style: const TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white),
+                            ),
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             '${wallet == 'MTN' ? 'MTN MoMo' : 'Airtel Money'}'
                             '${myNumber == null ? '' : ' ··${myNumber.substring(myNumber.length - 3)}'}',
                             style: const TextStyle(
-                                fontSize: 13,
+                                fontSize: 12.5,
                                 fontWeight: FontWeight.w600,
                                 fontFeatures: ZTokens.numFeatures),
                           ),
                           const SizedBox(width: 6),
-                          const Icon(Icons.unfold_more,
+                          const Icon(Icons.keyboard_arrow_down,
                               size: 15, color: ZTokens.ink3),
                         ],
                       ),
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () => context.go('/profile'),
-                    child: const AvatarBox('Z', size: 38, dark: true),
-                  ),
+                  const AvatarBox('Z', size: 42, dark: true),
                 ],
               ),
             ),
-            // Giant amount — 72px, tabular numerals, nothing else.
-            Expanded(
-              child: Center(
-                child: Text.rich(
-                  TextSpan(
-                    text: _digits.isEmpty ? '0' : rwf(_amount),
-                    style: TextStyle(
-                      fontSize: 72,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -2.88,
-                      fontFeatures: ZTokens.numFeatures,
-                      color: _digits.isEmpty ? ZTokens.ink3 : ZTokens.ink,
+            // Navy gradient pay card.
+            Container(
+              margin: const EdgeInsets.fromLTRB(24, 14, 24, 0),
+              padding: const EdgeInsets.fromLTRB(26, 26, 26, 30),
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                gradient: ZTokens.navyGradient,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: ZTokens.shadow,
+              ),
+              child: Stack(
+                children: [
+                  Positioned(
+                    right: -70,
+                    top: -80,
+                    child: Container(
+                      width: 200,
+                      height: 200,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.06),
+                          width: 28,
+                        ),
+                      ),
                     ),
-                    children: const [
-                      TextSpan(
-                        text: ' RWF',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0,
-                          color: ZTokens.ink3,
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Align(
+                        alignment: Alignment.topRight,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.1),
+                            borderRadius:
+                                BorderRadius.circular(ZTokens.radiusPill),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: ZTokens.accent,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 7),
+                              Text(
+                                wallet == 'MTN' ? 'MTN' : 'Airtel',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Center(
+                        child: Text.rich(
+                          TextSpan(
+                            text: _digits.isEmpty ? '0' : rwf(_amount),
+                            style: TextStyle(
+                              fontSize: 58,
+                              fontWeight: FontWeight.w600,
+                              fontFeatures: ZTokens.numFeatures,
+                              color: _digits.isEmpty
+                                  ? Colors.white.withValues(alpha: 0.55)
+                                  : Colors.white,
+                            ),
+                            children: [
+                              TextSpan(
+                                text: ' RWF',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ),
+                ],
               ),
             ),
-            ZKeypad(
-              onDigit: (d) {
-                if (_digits.length < 8) setState(() => _digits += d);
-              },
-              onBackspace: () {
-                if (_digits.isNotEmpty) {
-                  setState(
-                      () => _digits = _digits.substring(0, _digits.length - 1));
-                }
-              },
-              onClear: () => setState(() => _digits = ''),
+            Expanded(
+              child: ZKeypad(
+                onDigit: (d) {
+                  if (_digits.length < 8) setState(() => _digits += d);
+                },
+                onBackspace: () {
+                  if (_digits.isNotEmpty) {
+                    setState(() =>
+                        _digits = _digits.substring(0, _digits.length - 1));
+                  }
+                },
+                onClear: () => setState(() => _digits = ''),
+              ),
             ),
-            // Balance (ghost, on-demand USSD — never auto-polled) + Send.
+            // Balance (ghost, on-demand USSD) + Pay (orange).
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 22),
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 14),
               child: Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton.icon(
+                    child: OutlinedButton(
                       onPressed: () => ref.read(ussdEngineProvider).launchUssd(
                           wallet == 'MTN' ? mtnBalanceCode : airtelBalanceCode),
-                      icon: const Icon(Icons.credit_card_outlined, size: 18),
-                      label: const Text('Balance'),
+                      child: const Text('Balance'),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: FilledButton.icon(
-                      onPressed: _amount > 0
-                          ? () {
-                              ref
-                                  .read(sendFlowProvider.notifier)
-                                  .setAmount(_amount);
-                              setState(() => _digits = '');
-                              context.push('/send');
-                            }
-                          : null,
-                      icon: const Icon(Icons.arrow_upward, size: 18),
-                      label: Text(l.send),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius:
+                            BorderRadius.circular(ZTokens.radiusButton),
+                        boxShadow: _amount > 0 ? ZTokens.shadowAccent : null,
+                      ),
+                      child: FilledButton(
+                        onPressed: _amount > 0
+                            ? () {
+                                ref
+                                    .read(sendFlowProvider.notifier)
+                                    .setAmount(_amount);
+                                setState(() => _digits = '');
+                                context.push('/send');
+                              }
+                            : null,
+                        child: Text(l.pay),
+                      ),
                     ),
                   ),
                 ],
@@ -160,7 +245,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context: context,
       backgroundColor: ZTokens.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (sheet) => SafeArea(
         child: Column(

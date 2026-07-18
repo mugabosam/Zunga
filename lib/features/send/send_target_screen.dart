@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/data/name_lookup.dart';
 import '../../core/data/recents.dart';
+import '../../core/data/sample_data.dart';
 import '../../core/data/settings.dart';
 import '../../core/data/transactions.dart';
 import '../../core/theme/tokens.dart';
@@ -15,15 +16,10 @@ import '../../l10n/app_localizations.dart';
 import '../../ussd/providers.dart';
 import 'send_flow_state.dart';
 
-/// Send · step 2: phone number or MoMo Pay code.
-///
-/// Name check order, best first:
-///  1. registered (ID) name over the internet — the name on the SIM,
-///     via the KYC endpoint once it is live in the signed config;
-///  2. saved from a previous Zunga payment (recents);
-///  3. the phone's contacts;
-///  4. none of those → a double-check note. The carrier repeats the
-///     registered name inside its own session before the PIN, always.
+/// Screen 01b — route picker. One universal input: phone number, MoMo
+/// Pay code, EUCL meter or bank account. The route is detected as the
+/// user types, shown as a tappable chip, always overridable. Names
+/// resolve from the lookup service, previous payments, then contacts.
 class SendTargetScreen extends ConsumerStatefulWidget {
   const SendTargetScreen({super.key});
 
@@ -34,22 +30,34 @@ class SendTargetScreen extends ConsumerStatefulWidget {
 enum _NameSource { registered, recent, contacts }
 
 class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
-  String _number = '';
-  String _code = '';
+  final _controller = TextEditingController();
   String? _name;
   _NameSource? _nameSource;
   bool _lookingUp = false;
   Timer? _lookupDebounce;
 
   @override
+  void initState() {
+    super.initState();
+    _controller.addListener(() {
+      ref.read(sendFlowProvider.notifier).setInput(_controller.text);
+      _onInputChanged();
+    });
+  }
+
+  @override
   void dispose() {
     _lookupDebounce?.cancel();
+    _controller.dispose();
     super.dispose();
   }
 
-  void _onNumberChanged() {
+  void _onInputChanged() {
     _lookupDebounce?.cancel();
-    if (_number.length < 10) {
+    final flow = ref.read(sendFlowProvider);
+    final isPhone = flow.route == PayRoute.mtnNumber ||
+        flow.route == PayRoute.airtelNumber;
+    if (!isPhone || flow.digits.length != 10) {
       setState(() {
         _name = null;
         _nameSource = null;
@@ -62,12 +70,11 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
   }
 
   Future<void> _lookupName() async {
-    final number = _number;
+    final number = ref.read(sendFlowProvider).digits;
 
-    // 1. Registered (ID) name — needs internet and the KYC endpoint.
     final registered =
         await ref.read(nameLookupProvider).registeredName(number);
-    if (!mounted || number != _number) return;
+    if (!mounted || number != ref.read(sendFlowProvider).digits) return;
     if (registered != null) {
       setState(() {
         _name = registered;
@@ -77,10 +84,11 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
       return;
     }
 
-    // 2. Someone this user already paid through Zunga.
-    final recents = ref.read(recentsProvider);
-    final recent = recents.where((r) => r.msisdn == number).toList();
-    if (recent.isNotEmpty && recent.first.name != null) {
+    final recent = ref
+        .read(recentsProvider)
+        .where((r) => r.msisdn == number && r.name != null)
+        .toList();
+    if (recent.isNotEmpty) {
       setState(() {
         _name = recent.first.name;
         _nameSource = _NameSource.recent;
@@ -89,7 +97,6 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
       return;
     }
 
-    // 3. The phone's own contacts — only with the user's consent toggle.
     if (!ref.read(settingsProvider).enableContacts) {
       setState(() {
         _name = null;
@@ -99,7 +106,7 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
       return;
     }
     final contact = await ref.read(ussdEngineProvider).lookupContactName(number);
-    if (!mounted || number != _number) return;
+    if (!mounted || number != ref.read(sendFlowProvider).digits) return;
     setState(() {
       _name = contact;
       _nameSource = contact != null ? _NameSource.contacts : null;
@@ -112,109 +119,137 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
     final l = AppLocalizations.of(context);
     final flow = ref.watch(sendFlowProvider);
     final recents = ref.watch(recentsProvider);
-    final isCode = flow.target == PayTarget.merchantCode;
-    final detected = detectNetwork(_number);
-    final canPay =
-        isCode ? _code.length >= 4 : (_number.length == 10 && detected != null);
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: zAppBar(
         context,
-        title: flow.amount > 0 ? '${l.pay} · ${rwf(flow.amount)} RWF' : l.sendMoney,
+        title:
+            flow.amount > 0 ? '${l.pay} ${rwf(flow.amount)} RWF' : l.sendMoney,
       ),
       body: Column(
         children: [
-          SegControl(
-            options: [l.phoneNumber, 'MoMo Pay code'],
-            selected: isCode ? 1 : 0,
-            onChanged: (i) => ref
-                .read(sendFlowProvider.notifier)
-                .setTarget(i == 0 ? PayTarget.phoneNumber : PayTarget.merchantCode),
+          // Universal destination input.
+          Container(
+            margin: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            height: 52,
+            decoration: BoxDecoration(
+              color: ZTokens.surface,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: ZTokens.shadowSoft,
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.search, size: 18, color: ZTokens.ink3),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    autofocus: true,
+                    keyboardType: TextInputType.phone,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      fontFeatures: ZTokens.numFeatures,
+                      color: ZTokens.ink,
+                    ),
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      isDense: true,
+                      hintText: 'Number, MoMo code, meter or account',
+                      hintStyle: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: ZTokens.ink3,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 30, 24, 8),
-                  child: Column(
-                    children: [
-                      Text(
-                        (isCode ? 'MoMo Pay code' : l.recipientNumber).toUpperCase(),
-                        style: ZText.groupLabel,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        isCode
-                            ? (_code.isEmpty ? '· · · · · ·' : _code)
-                            : (_number.isEmpty ? '07•• ••• •••' : _formatNumber(_number)),
-                        style: TextStyle(
-                          fontSize: 34,
-                          fontWeight: FontWeight.w700,
-                          fontFeatures: ZTokens.numFeatures,
-                          color: (isCode ? _code : _number).isEmpty
-                              ? ZTokens.ink3
-                              : ZTokens.ink,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // People paid before — one tap fills the number.
-                if (!isCode && _number.isEmpty && recents.isNotEmpty) ...[
-                  GroupLabel('Paid before', topPadding: 14),
-                  SizedBox(
-                    height: 86,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      itemCount: recents.length,
-                      separatorBuilder: (_, _) => const SizedBox(width: 16),
-                      itemBuilder: (_, i) {
-                        final r = recents[i];
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() => _number = r.msisdn);
-                            _onNumberChanged();
-                          },
-                          child: Column(
-                            children: [
-                              AvatarBox(r.initials, size: 52),
-                              const SizedBox(height: 7),
-                              Text(
-                                r.name?.split(' ').first ?? r.msisdn,
-                                style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w500,
-                                    color: ZTokens.ink2),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-                if (!isCode && detected != null)
-                  Center(
+                // Detection chip — visible, tappable, never a silent guess.
+                if (flow.route != PayRoute.incomplete)
+                  GestureDetector(
+                    onTap: () => _chooseRoute(context, flow),
                     child: Container(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      margin: const EdgeInsets.fromLTRB(24, 14, 24, 0),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 11),
                       decoration: BoxDecoration(
-                        color: ZTokens.surface,
-                        border: Border.all(color: ZTokens.line),
-                        borderRadius: BorderRadius.circular(ZTokens.radiusPill),
+                        color: ZTokens.accentTint,
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      child: Text(
-                        '$detected number',
-                        style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: ZTokens.ink2),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 26,
+                            height: 26,
+                            decoration: BoxDecoration(
+                              color: ZTokens.accent,
+                              borderRadius: BorderRadius.circular(9),
+                            ),
+                            child: const Icon(Icons.check,
+                                size: 14, color: Colors.white),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text.rich(
+                              TextSpan(
+                                text: 'Detected  ',
+                                style: const TextStyle(
+                                    fontSize: 12, color: ZTokens.ink2),
+                                children: [
+                                  TextSpan(
+                                    text: routeLabelOf(flow.route),
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: ZTokens.ink),
+                                  ),
+                                  if (flow.isCrossNetwork)
+                                    const TextSpan(text: '  ·  eKash'),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const Text(
+                            'Change',
+                            style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: ZTokens.accent),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                if (!isCode && _lookingUp)
+                // Bank picker (bank route).
+                if (flow.route == PayRoute.bank) ...[
+                  GroupLabel('Choose the bank'),
+                  RowGroup(children: [
+                    for (final bank in ref
+                        .watch(institutionsProvider)
+                        .where((i) => !i.isWallet && i.code != null))
+                      BillRow(
+                        leading: AvatarBox(bank.initials, size: 40),
+                        title: bank.name,
+                        showChevron: false,
+                        trailing: flow.bankCode == bank.code
+                            ? const Icon(Icons.check_circle,
+                                color: ZTokens.accent, size: 20)
+                            : null,
+                        onTap: () => ref
+                            .read(sendFlowProvider.notifier)
+                            .setBankCode(bank.code!),
+                      ),
+                  ]),
+                ],
+                if (_lookingUp)
                   const Padding(
                     padding: EdgeInsets.only(top: 18),
                     child: Center(
@@ -225,54 +260,57 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
                       ),
                     ),
                   ),
-                // Who you are about to pay — change the number if this
-                // isn't the person you meant.
-                if (!isCode && !_lookingUp && _name != null)
+                if (!_lookingUp && _name != null)
                   AccentBanner(
                     hint: switch (_nameSource) {
                       _NameSource.registered => 'Registered name',
-                      _NameSource.recent => 'Paid before with Zunga',
+                      _NameSource.recent => 'Paid before',
                       _ => 'In your contacts',
                     },
                     title: _name!,
-                    subtitle: _formatNumber(_number),
-                    margin: const EdgeInsets.fromLTRB(24, 18, 24, 0),
+                    subtitle: _formatNumber(flow.digits),
                   ),
-                if (!isCode && !_lookingUp && canPay && _name == null)
+                if (!_lookingUp &&
+                    _name == null &&
+                    flow.readyToPay &&
+                    (flow.route == PayRoute.mtnNumber ||
+                        flow.route == PayRoute.airtelNumber))
                   const RailNote(
                     'Unrecognized number — double-check before paying.',
                     icon: Icons.info_outline,
                     iconColor: ZTokens.ink3,
                     margin: EdgeInsets.fromLTRB(24, 18, 24, 0),
                   ),
+                // Recents — one tap fills the input.
+                if (flow.input.isEmpty && recents.isNotEmpty) ...[
+                  GroupLabel('Recent'),
+                  RowGroup(children: [
+                    for (final r in recents.take(5))
+                      BillRow(
+                        leading: AvatarBox(r.initials, size: 42),
+                        title: r.name ?? _formatNumber(r.msisdn),
+                        subtitle: r.network,
+                        showChevron: false,
+                        onTap: () => _controller.text = r.msisdn,
+                      ),
+                  ]),
+                ],
               ],
             ),
           ),
-          ZKeypad(
-            onDigit: (d) => setState(() {
-              if (isCode) {
-                if (_code.length < 8) _code += d;
-              } else if (_number.length < 10) {
-                _number += d;
-                _onNumberChanged();
-              }
-            }),
-            onBackspace: () => setState(() {
-              if (isCode) {
-                if (_code.isNotEmpty) _code = _code.substring(0, _code.length - 1);
-              } else if (_number.isNotEmpty) {
-                _number = _number.substring(0, _number.length - 1);
-                _onNumberChanged();
-              }
-            }),
-          ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 22),
-            child: FilledButton(
-              onPressed: canPay ? () => _pay(context) : null,
-              child: Text(flow.amount > 0
-                  ? '${l.pay} ${rwf(flow.amount)} RWF'
-                  : l.pay),
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(ZTokens.radiusButton),
+                boxShadow: flow.readyToPay ? ZTokens.shadowAccent : null,
+              ),
+              child: FilledButton(
+                onPressed: flow.readyToPay ? () => _pay(context) : null,
+                child: Text(flow.amount > 0
+                    ? '${l.pay} ${rwf(flow.amount)} RWF'
+                    : l.pay),
+              ),
             ),
           ),
         ],
@@ -280,14 +318,61 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
     );
   }
 
-  Future<void> _pay(BuildContext context) async {
-    final notifier = ref.read(sendFlowProvider.notifier);
-    notifier.setNumber(_number);
-    notifier.setMerchantCode(_code);
-    final flow = ref.read(sendFlowProvider);
+  Future<void> _chooseRoute(BuildContext context, SendFlowState flow) async {
+    final choice = await showModalBottomSheet<PayRoute>(
+      context: context,
+      backgroundColor: ZTokens.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheet) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(top: 12, bottom: 16),
+              decoration: BoxDecoration(
+                color: ZTokens.line,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Text('Send as',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            for (final route in const [
+              PayRoute.mtnNumber,
+              PayRoute.airtelNumber,
+              PayRoute.momoPay,
+              PayRoute.meter,
+              PayRoute.bank,
+            ])
+              ListTile(
+                title: Text(routeLabelOf(route),
+                    style: const TextStyle(
+                        fontSize: 14.5, fontWeight: FontWeight.w600)),
+                trailing: route == flow.route
+                    ? const Icon(Icons.check_circle,
+                        color: ZTokens.accent, size: 20)
+                    : null,
+                onTap: () => Navigator.pop(sheet, route),
+              ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+    if (choice != null) {
+      ref.read(sendFlowProvider.notifier).overrideRoute(choice);
+    }
+  }
 
-    // Coach mark (execution prompt §3): shown once, on the very first
-    // send. Backing out means nothing was sent and nothing is recorded.
+  Future<void> _pay(BuildContext context) async {
+    final flow = ref.read(sendFlowProvider);
+    final notifier = ref.read(sendFlowProvider.notifier);
+
+    // First-send coach mark; backing out records nothing.
     if (!ref.read(settingsProvider).coachMarkSeen) {
       final proceed = await _showCoachMark(context, flow);
       if (proceed != true || !context.mounted) return;
@@ -298,38 +383,33 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
     }
 
     final settings = ref.read(settingsProvider);
+    final isPhone = flow.route == PayRoute.mtnNumber ||
+        flow.route == PayRoute.airtelNumber;
 
-    // Remember who was paid so the next send is one tap; the best-known
-    // name is stored alongside (on-device only).
-    if (settings.saveRecents && flow.target == PayTarget.phoneNumber) {
+    if (settings.saveRecents && isPhone) {
       await ref.read(recentsProvider.notifier).remember(RecentRecipient(
-            msisdn: _number,
+            msisdn: flow.digits,
             name: _name,
-            network: detectNetwork(_number),
+            network: detectNetwork(flow.digits),
             lastPaidAt: DateTime.now(),
           ));
     }
 
-    // Lifecycle §2.1: recorded as awaiting_pin, promoted to
-    // pending_confirmation once the session is handed to the carrier.
-    // It becomes `confirmed` — and only then visible in totals — when
-    // the success string or the carrier SMS proves it.
+    // Lifecycle §2.1: awaiting_pin → pending_confirmation; `confirmed`
+    // only when the success string or carrier SMS proves it.
     TxRecord? tx;
     if (settings.saveTransactions) {
       tx = await ref.read(transactionsProvider.notifier).record(TxRecord(
             id: DateTime.now().microsecondsSinceEpoch.toString(),
-            msisdn: flow.target == PayTarget.phoneNumber ? _number : _code,
+            msisdn: flow.digits,
             counterpartyName: _name,
             amount: flow.amount,
-            network: detectNetwork(_number) ?? flow.routeLabel,
+            network: detectNetwork(flow.digits) ?? routeLabelOf(flow.route),
             status: TxStatus.awaitingPin,
             createdAt: DateTime.now(),
           ));
     }
 
-    // Runs the session in place — the carrier popup takes over and asks
-    // for the PIN. Falls back to the prefilled dialer only if the call
-    // permission was just requested.
     await ref.read(ussdEngineProvider).launchUssd(flow.dialCode);
     if (tx != null) {
       await ref
@@ -343,16 +423,15 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
   }
 
   Future<bool?> _showCoachMark(BuildContext context, SendFlowState flow) {
-    final carrier = flow.simNetworks.contains(SimNetwork.airtel) &&
-            !flow.isCrossNetwork &&
-            detectNetwork(_number) == 'Airtel'
-        ? 'Airtel'
-        : 'MTN';
+    final carrier =
+        flow.route == PayRoute.airtelNumber && !flow.isCrossNetwork
+            ? 'Airtel'
+            : 'MTN';
     return showModalBottomSheet<bool>(
       context: context,
       backgroundColor: ZTokens.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (sheet) => SafeArea(
         child: Padding(
