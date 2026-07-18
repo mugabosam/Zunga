@@ -29,13 +29,12 @@ class BillsHubScreen extends ConsumerWidget {
             BillRow(
               icon: Icons.bolt_outlined,
               title: '${l.electricity} · EUCL',
-              subtitle: 'Cash power token via the MoMo menu',
+              subtitle: 'Prepaid token',
               onTap: () => dial(mtnMenuRoot),
             ),
             BillRow(
               icon: Icons.water_drop_outlined,
               title: 'Water · WASAC',
-              subtitle: 'Pay via the MoMo menu',
               onTap: () => dial(mtnMenuRoot),
             ),
           ]),
@@ -44,7 +43,6 @@ class BillsHubScreen extends ConsumerWidget {
             BillRow(
               icon: Icons.tv_outlined,
               title: 'Canal+ · DStv · StarTimes',
-              subtitle: 'Pay via the MoMo menu',
               onTap: () => dial(mtnMenuRoot),
             ),
           ]),
@@ -53,13 +51,11 @@ class BillsHubScreen extends ConsumerWidget {
             BillRow(
               icon: Icons.smartphone_outlined,
               title: 'MTN airtime & bundles',
-              subtitle: mtnMenuRoot,
               onTap: () => dial(mtnMenuRoot),
             ),
             BillRow(
               icon: Icons.smartphone_outlined,
               title: 'Airtel airtime & bundles',
-              subtitle: airtelMenuRoot,
               onTap: () => dial(airtelMenuRoot),
             ),
           ]),
@@ -68,15 +64,9 @@ class BillsHubScreen extends ConsumerWidget {
             BillRow(
               icon: Icons.account_balance_outlined,
               title: 'Irembo · RRA · Mutuelle · School fees',
-              subtitle: 'Pay via the MoMo menu with your reference',
               onTap: () => dial(mtnMenuRoot),
             ),
           ]),
-          const RailNote(
-            'Each row opens your dialer on the carrier menu. One-tap deep codes per biller ship remotely as they are confirmed on real SIMs — no app update needed.',
-            icon: Icons.info_outline,
-            margin: EdgeInsets.fromLTRB(24, 16, 24, 0),
-          ),
         ],
       ),
     );

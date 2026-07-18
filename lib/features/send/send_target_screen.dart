@@ -116,7 +116,6 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
     final detected = detectNetwork(_number);
     final canPay =
         isCode ? _code.length >= 4 : (_number.length == 10 && detected != null);
-    final preview = flow.copyWith(recipientMsisdn: _number, merchantCode: _code);
 
     return Scaffold(
       appBar: zAppBar(
@@ -207,9 +206,7 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
                         borderRadius: BorderRadius.circular(ZTokens.radiusPill),
                       ),
                       child: Text(
-                        preview.isCrossNetwork
-                            ? '$detected number · sent via eKash'
-                            : '$detected number',
+                        '$detected number',
                         style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -243,10 +240,9 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
                   ),
                 if (!isCode && !_lookingUp && canPay && _name == null)
                   const RailNote(
-                    'No name found for this number yet. Double-check it — the '
-                    'network will show the registered name before you confirm '
-                    'with your PIN.',
+                    'Unrecognized number — double-check before paying.',
                     icon: Icons.info_outline,
+                    iconColor: ZTokens.ink3,
                     margin: EdgeInsets.fromLTRB(24, 18, 24, 0),
                   ),
               ],
@@ -290,11 +286,16 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
     notifier.setMerchantCode(_code);
     final flow = ref.read(sendFlowProvider);
 
-    // Coach mark (execution prompt §3): the next popup belongs to the
-    // carrier, not Zunga. Shown before every session; backing out here
-    // means nothing was sent and nothing is recorded.
-    final proceed = await _showCoachMark(context, flow);
-    if (proceed != true || !context.mounted) return;
+    // Coach mark (execution prompt §3): shown once, on the very first
+    // send. Backing out means nothing was sent and nothing is recorded.
+    if (!ref.read(settingsProvider).coachMarkSeen) {
+      final proceed = await _showCoachMark(context, flow);
+      if (proceed != true || !context.mounted) return;
+      final s = ref.read(settingsProvider);
+      await ref
+          .read(settingsProvider.notifier)
+          .update(s.copyWith(coachMarkSeen: true));
+    }
 
     final settings = ref.read(settingsProvider);
 
@@ -380,15 +381,14 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
                     color: ZTokens.accent, size: 24),
               ),
               Text(
-                '$carrier will now ask for your PIN',
+                '$carrier will ask for your PIN',
                 style:
                     const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 8),
               const Text(
-                'The popup that appears next belongs to your network, not '
-                'Zunga. Your PIN goes to them — Zunga never sees it. '
-                'Cancel there and nothing is sent.',
+                'The next popup is your network\'s — your PIN goes to them, '
+                'never to Zunga.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                     fontSize: 13.5, color: ZTokens.ink2, height: 1.55),

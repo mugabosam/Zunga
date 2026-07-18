@@ -30,7 +30,7 @@ class PayHubScreen extends ConsumerWidget {
               BillRow(
                 icon: Icons.arrow_forward,
                 title: l.sendToMobile,
-                subtitle: '*182*1*1# same network · *182*1*2# cross-network',
+                subtitle: 'MTN MoMo · Airtel Money',
                 onTap: () {
                   ref.read(sendFlowProvider.notifier).setTarget(PayTarget.phoneNumber);
                   context.push('/send');
@@ -39,7 +39,7 @@ class PayHubScreen extends ConsumerWidget {
               BillRow(
                 icon: Icons.storefront_outlined,
                 title: l.payMerchant,
-                subtitle: 'MoMo Pay · *182*8*1#',
+                subtitle: 'MoMo Pay',
                 onTap: () {
                   ref.read(sendFlowProvider.notifier).setTarget(PayTarget.merchantCode);
                   context.push('/send');
@@ -48,13 +48,13 @@ class PayHubScreen extends ConsumerWidget {
               BillRow(
                 icon: Icons.account_balance_outlined,
                 title: l.bankTransferEkash,
-                subtitle: 'Any bank ↔ any wallet, fee capped at 20 RWF',
+                subtitle: 'Any bank ↔ any wallet',
                 onTap: () => context.push('/bank-transfer'),
               ),
               BillRow(
                 icon: Icons.south_outlined,
                 title: l.withdrawCash,
-                subtitle: 'Agent withdrawal via your carrier menu',
+                subtitle: 'Agent code',
                 onTap: () => dial(mtnMenuRoot),
               ),
             ]),
@@ -63,7 +63,6 @@ class PayHubScreen extends ConsumerWidget {
               BillRow(
                 icon: Icons.receipt_long_outlined,
                 title: '${l.electricity} · Water · TV · Airtime',
-                subtitle: 'EUCL, WASAC, Canal+, DStv, StarTimes, bundles',
                 onTap: () => context.push('/bills'),
               ),
             ]),
@@ -72,16 +71,14 @@ class PayHubScreen extends ConsumerWidget {
               BillRow(
                 icon: Icons.account_balance_outlined,
                 title: 'Irembo · RRA · Mutuelle · School fees',
-                subtitle: 'Pay with your reference via the carrier menu',
                 onTap: () => context.push('/government'),
               ),
             ]),
-            GroupLabel('Codes'),
+            GroupLabel('Banks'),
             RowGroup(children: [
               BillRow(
-                icon: Icons.dialpad,
-                title: 'eKash access codes',
-                subtitle: 'All banks and wallets on the national rail',
+                icon: Icons.account_balance_outlined,
+                title: 'Banks & wallets',
                 onTap: () => context.push('/accounts'),
               ),
             ]),

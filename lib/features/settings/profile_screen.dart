@@ -64,7 +64,7 @@ class ProfileScreen extends ConsumerWidget {
                   Text(
                     myNumber == null
                         ? 'Register the number you pay from'
-                        : '${detectNetwork(myNumber) ?? 'Unknown network'} · payments leave from this number',
+                        : detectNetwork(myNumber) ?? 'Unknown network',
                     style: ZText.rowSub,
                   ),
                   Container(
@@ -82,11 +82,6 @@ class ProfileScreen extends ConsumerWidget {
                                 _stat('Transactions sent', '${stats.count}×')),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Confirmed payments only — never inflated.',
-                    style: TextStyle(fontSize: 11.5, color: ZTokens.ink3),
                   ),
                 ],
               ),
@@ -124,7 +119,7 @@ class ProfileScreen extends ConsumerWidget {
               _toggle(
                 ref,
                 'Enable contacts',
-                'Recipient names from my device contact list — looked up on this phone only',
+                'Recipient suggestions from my contact list',
                 settings.enableContacts,
                 (v) => settings.copyWith(enableContacts: v),
               ),
@@ -141,7 +136,7 @@ class ProfileScreen extends ConsumerWidget {
               _toggle(
                 ref,
                 'Save transactions',
-                'Keep records of payments made via Zunga, on this phone only',
+                'Keep records of payments made via Zunga',
                 settings.saveTransactions,
                 (v) => settings.copyWith(saveTransactions: v),
               ),
@@ -156,12 +151,11 @@ class ProfileScreen extends ConsumerWidget {
                 (v) => settings.copyWith(notifications: v),
               ),
             ]),
-            GroupLabel('Codes'),
+            GroupLabel('Banks'),
             RowGroup(children: [
               BillRow(
-                icon: Icons.dialpad,
-                title: 'eKash access codes',
-                subtitle: 'Every bank and wallet on the national rail',
+                icon: Icons.account_balance_outlined,
+                title: 'Banks & wallets',
                 onTap: () => context.push('/accounts'),
               ),
             ]),

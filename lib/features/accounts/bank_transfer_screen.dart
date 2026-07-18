@@ -27,38 +27,27 @@ class BankTransferScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.only(bottom: 24),
         children: [
-          RailNote(
-            l.ekashRailNote,
-            margin: const EdgeInsets.fromLTRB(24, 4, 24, 0),
-          ),
-          GroupLabel('Send from your bank', topPadding: 18),
-          RowGroup(children: [
-            for (final bank in banks)
-              BillRow(
-                leading: AvatarBox(bank.initials, size: 42),
-                title: bank.name,
-                subtitle: bank.code,
-                onTap: () => ref.read(ussdEngineProvider).launchUssd(bank.code!),
-                trailing: const Icon(Icons.phone_outlined,
-                    size: 18, color: ZTokens.accent),
-              ),
-          ]),
-          GroupLabel('Send from your wallet'),
+          GroupLabel('From your wallet', topPadding: 8),
           RowGroup(children: [
             BillRow(
               leading: const AvatarBox('eK', size: 42),
-              title: 'MTN MoMo or Airtel Money → any bank or wallet',
-              subtitle: '*182*1*2# · works from any network',
+              title: 'Wallet → any bank or wallet',
               onTap: () => ref.read(ussdEngineProvider).launchUssd('*182*1*2#'),
               trailing: const Icon(Icons.phone_outlined,
                   size: 18, color: ZTokens.accent),
             ),
           ]),
-          const RailNote(
-            'Tapping a bank runs its eKash code right away — follow your bank\'s own menu and confirm with your PIN. The eKash fee is capped at 20 RWF.',
-            icon: Icons.info_outline,
-            margin: EdgeInsets.fromLTRB(24, 16, 24, 0),
-          ),
+          GroupLabel('From your bank'),
+          RowGroup(children: [
+            for (final bank in banks)
+              BillRow(
+                leading: AvatarBox(bank.initials, size: 42),
+                title: bank.name,
+                onTap: () => ref.read(ussdEngineProvider).launchUssd(bank.code!),
+                trailing: const Icon(Icons.phone_outlined,
+                    size: 18, color: ZTokens.accent),
+              ),
+          ]),
         ],
       ),
     );

@@ -21,7 +21,7 @@ class LinkedAccountsScreen extends ConsumerWidget {
     final banks = institutions.where((i) => !i.isWallet).toList();
 
     return Scaffold(
-      appBar: zAppBar(context, title: 'eKash access codes'),
+      appBar: zAppBar(context, title: 'Banks & wallets'),
       body: ListView(
         padding: const EdgeInsets.only(bottom: 24),
         children: [
@@ -33,11 +33,6 @@ class LinkedAccountsScreen extends ConsumerWidget {
           RowGroup(children: [
             for (final i in banks) _row(ref, i),
           ]),
-          RailNote(
-            l.pinNeverLeaves,
-            icon: Icons.lock_outline,
-            margin: const EdgeInsets.fromLTRB(24, 18, 24, 0),
-          ),
         ],
       ),
     );
@@ -47,29 +42,13 @@ class LinkedAccountsScreen extends ConsumerWidget {
     return BillRow(
       leading: AvatarBox(i.initials, size: 42),
       title: i.name,
-      subtitle: i.code == null ? 'App only — no USSD code' : 'Tap the code to run it',
       showChevron: false,
+      onTap: i.code == null
+          ? null
+          : () => ref.read(ussdEngineProvider).launchUssd(i.code!),
       trailing: i.code == null
           ? const StatusPill('App', kind: PillKind.wait)
-          : GestureDetector(
-              onTap: () => ref.read(ussdEngineProvider).launchUssd(i.code!),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: ZTokens.accentTint,
-                  borderRadius: BorderRadius.circular(ZTokens.radiusPill),
-                ),
-                child: Text(
-                  i.code!,
-                  style: const TextStyle(
-                    fontFamily: ZTokens.fontFamilyMono,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: ZTokens.accent,
-                  ),
-                ),
-              ),
-            ),
+          : const Icon(Icons.phone_outlined, size: 18, color: ZTokens.accent),
     );
   }
 }

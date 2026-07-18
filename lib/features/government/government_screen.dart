@@ -28,7 +28,6 @@ class GovernmentScreen extends ConsumerWidget {
             BillRow(
               icon: Icons.favorite_outline,
               title: l.mutuelle,
-              subtitle: 'Pay per household member via the MoMo menu',
               onTap: () => dial(mtnMenuRoot),
             ),
           ]),
@@ -37,7 +36,6 @@ class GovernmentScreen extends ConsumerWidget {
             BillRow(
               icon: Icons.badge_outlined,
               title: 'Traffic fines · certificates · permits',
-              subtitle: 'Pay your Irembo reference via the MoMo menu',
               onTap: () => dial(mtnMenuRoot),
             ),
           ]),
@@ -46,22 +44,14 @@ class GovernmentScreen extends ConsumerWidget {
             BillRow(
               icon: Icons.description_outlined,
               title: 'RRA taxes',
-              subtitle: 'Pay a declaration by reference',
               onTap: () => dial(mtnMenuRoot),
             ),
             BillRow(
               icon: Icons.school_outlined,
               title: 'School fees',
-              subtitle: 'Pay via bank or MoMo reference',
               onTap: () => dial(mtnMenuRoot),
             ),
           ]),
-          const RailNote(
-            'Have your reference number ready — the carrier menu asks for it. '
-            'One-tap deep codes ship remotely once verified on real SIMs.',
-            icon: Icons.info_outline,
-            margin: EdgeInsets.fromLTRB(24, 16, 24, 0),
-          ),
         ],
       ),
     );

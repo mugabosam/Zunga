@@ -50,7 +50,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                   const SizedBox(height: 22),
                   const Text(
-                    'Which number will you pay from?',
+                    'Your number',
                     style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w600,
@@ -58,9 +58,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Enter the phone number of the SIM in this phone that '
-                    'you use for MoMo or Airtel Money. Zunga uses it to pick '
-                    'the right codes for every payment — it is stored on '
+                    'The MoMo or Airtel Money number you pay from. Stored on '
                     'this phone only.',
                     style: TextStyle(
                         fontSize: 13.5, color: ZTokens.ink2, height: 1.55),
@@ -128,7 +126,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         if (context.mounted) context.go('/home');
                       }
                     : null,
-                child: const Text('Start using Zunga'),
+                child: const Text('Continue'),
               ),
             ),
           ],

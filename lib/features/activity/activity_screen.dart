@@ -86,13 +86,6 @@ class ActivityScreen extends ConsumerWidget {
               RowGroup(children: [
                 for (final t in pending) _pendingRow(context, ref, t),
               ]),
-              const RailNote(
-                'These were handed to your network but no success message or '
-                'SMS has proven them yet. They join your totals only once '
-                'confirmed — tap one when the carrier SMS arrives.',
-                icon: Icons.hourglass_empty,
-                iconColor: ZTokens.ink3,
-              ),
             ],
             GroupLabel('Confirmed'),
             if (confirmed.isEmpty)
@@ -104,12 +97,8 @@ class ActivityScreen extends ConsumerWidget {
                         size: 28, color: ZTokens.ink3),
                     SizedBox(height: 10),
                     Text(
-                      'No confirmed payments yet. A payment appears here only '
-                      'once your network\'s success message or SMS proves it '
-                      '— never at button-press.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          fontSize: 13, color: ZTokens.ink2, height: 1.5),
+                      'No confirmed payments yet',
+                      style: TextStyle(fontSize: 13, color: ZTokens.ink2),
                     ),
                   ],
                 ),
@@ -157,12 +146,9 @@ class ActivityScreen extends ConsumerWidget {
                   ],
                 ],
               ),
-              Text(
-                number == null
-                    ? 'Balance on demand — never auto-checked'
-                    : '··${number.substring(number.length - 3)} · balance on demand',
-                style: ZText.rowSub,
-              ),
+              if (number != null)
+                Text('··${number.substring(number.length - 3)}',
+                    style: ZText.rowSub),
             ],
           ),
         ),
