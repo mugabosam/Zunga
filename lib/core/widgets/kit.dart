@@ -450,65 +450,93 @@ class ZKeypad extends StatelessWidget {
     required this.onDigit,
     required this.onBackspace,
     this.onClear,
+    this.dark = false,
   });
 
   final ValueChanged<String> onDigit;
   final VoidCallback onBackspace;
   final VoidCallback? onClear;
 
+  /// White digits on the dark home surface.
+  final bool dark;
+
   @override
   Widget build(BuildContext context) {
-    Widget key(String label, {VoidCallback? onTap, Widget? child}) {
-      return Expanded(
-        child: InkWell(
-          onTap: onTap ?? () => onDigit(label),
-          borderRadius: BorderRadius.circular(14),
-          child: SizedBox(
-            height: 60,
-            child: Center(
-              child: child ??
-                  Text(
-                    label,
-                    style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w500,
-                        color: ZTokens.navy),
-                  ),
-            ),
-          ),
-        ),
-      );
-    }
-
+    // Rows shrink on short screens instead of overflowing.
     return Padding(
-      padding: const EdgeInsets.fromLTRB(32, 6, 32, 18),
-      child: Column(
-        children: [
-          Row(children: [key('1'), key('2'), key('3')]),
-          Row(children: [key('4'), key('5'), key('6')]),
-          Row(children: [key('7'), key('8'), key('9')]),
-          Row(children: [
-            onClear != null
-                ? key(
-                    'clear',
-                    onTap: onClear,
-                    child: const Text(
-                      'clear',
-                      style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: ZTokens.accent),
-                    ),
-                  )
-                : key('·', onTap: () {}),
-            key('0'),
-            key(
-              '⌫',
-              onTap: onBackspace,
-              child: const Icon(Icons.backspace_outlined, size: 24),
-            ),
-          ]),
-        ],
+      padding: const EdgeInsets.fromLTRB(32, 6, 32, 12),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final rowHeight = constraints.hasBoundedHeight
+              ? (constraints.maxHeight / 4).clamp(42.0, 64.0)
+              : 60.0;
+          final digitSize = rowHeight >= 56 ? 24.0 : 20.0;
+          final digitColor = dark ? Colors.white : ZTokens.navy;
+
+          Widget key(String label, {VoidCallback? onTap, Widget? child}) {
+            return Expanded(
+              child: InkWell(
+                onTap: onTap ?? () => onDigit(label),
+                borderRadius: BorderRadius.circular(14),
+                child: SizedBox(
+                  height: rowHeight,
+                  child: Center(
+                    child: child ??
+                        Text(
+                          label,
+                          style: TextStyle(
+                              fontSize: digitSize,
+                              fontWeight: FontWeight.w600,
+                              color: digitColor),
+                        ),
+                  ),
+                ),
+              ),
+            );
+          }
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(children: [key('1'), key('2'), key('3')]),
+              Row(children: [key('4'), key('5'), key('6')]),
+              Row(children: [key('7'), key('8'), key('9')]),
+              Row(children: [
+                onClear != null
+                    ? key(
+                        'Clear',
+                        onTap: onClear,
+                        child: const Text(
+                          'Clear',
+                          style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w600,
+                              color: ZTokens.accent),
+                        ),
+                      )
+                    : key('·', onTap: () {}),
+                key('0'),
+                key(
+                  '⌫',
+                  onTap: onBackspace,
+                  child: dark
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.backspace,
+                              size: 18, color: Colors.white),
+                        )
+                      : const Icon(Icons.backspace_outlined,
+                          size: 22, color: ZTokens.navy),
+                ),
+              ]),
+            ],
+          );
+        },
       ),
     );
   }

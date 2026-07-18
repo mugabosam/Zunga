@@ -15,6 +15,11 @@ abstract final class ZTokens {
   static const lineSoft = Color(0xFFF2F3F8);
   static const navy = Color(0xFF232C63);
   static const navy2 = Color(0xFF2E3A7C);
+
+  // Dark home surface (keypad-first screen only).
+  static const bgDark = Color(0xFF10142E);
+  static const cardDark = Color(0xFF171D42);
+  static const lineDark = Color(0xFF2A3160);
   static const accent = Color(0xFFEE7B3F);
   static const accentTint = Color(0xFFFDEEE4);
   static const accentBorder = Color(0xFFF8DCC7);
