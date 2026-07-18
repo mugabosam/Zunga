@@ -76,5 +76,14 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- Package visibility (Android 11+): without these, the system
+             hides the browser/WhatsApp and every outbound link fails with
+             "component name is null". -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <category android:name="android.intent.category.BROWSABLE"/>
+            <data android:scheme="https"/>
+        </intent>
+        <package android:name="com.whatsapp"/>
     </queries>
 </manifest>

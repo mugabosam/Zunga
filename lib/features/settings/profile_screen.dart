@@ -22,9 +22,15 @@ import '../send/send_flow_state.dart' show detectNetwork;
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
-  static const _supportWhatsApp = 'https://wa.me/250788000000';
-  static const _privacyUrl = 'https://zunga.rw/privacy';
-  static const _termsUrl = 'https://zunga.rw/terms';
+  /// App scheme first — opens the WhatsApp app directly; wa.me is the
+  /// fallback when WhatsApp is not installed (shows its install page).
+  static const _supportWhatsAppApp = 'whatsapp://send?phone=250728670972';
+  static const _supportWhatsApp = 'https://wa.me/250728670972';
+  // Real, resolvable pages — swap for zunga.rw once the domain is live.
+  static const _privacyUrl =
+      'https://github.com/mugabosam/Zunga/blob/main/PRIVACY.md';
+  static const _termsUrl =
+      'https://github.com/mugabosam/Zunga/blob/main/TERMS.md';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -165,13 +171,13 @@ class ProfileScreen extends ConsumerWidget {
                 icon: Icons.chat_outlined,
                 title: 'WhatsApp support',
                 subtitle: 'Chat with us on WhatsApp',
-                onTap: () => _open(_supportWhatsApp),
+                onTap: () => _openWhatsApp(context),
               ),
               BillRow(
                 icon: Icons.share_outlined,
                 title: 'Share the app',
                 subtitle: 'Invite friends and family to Zunga',
-                onTap: () => _open(
+                onTap: () => _open(context,
                     'https://wa.me/?text=${Uri.encodeComponent('Zunga — pay anyone in Rwanda without typing USSD codes. https://github.com/mugabosam/Zunga')}'),
               ),
             ]),
@@ -180,12 +186,12 @@ class ProfileScreen extends ConsumerWidget {
               BillRow(
                 icon: Icons.privacy_tip_outlined,
                 title: 'Privacy Policy',
-                onTap: () => _open(_privacyUrl),
+                onTap: () => _open(context, _privacyUrl),
               ),
               BillRow(
                 icon: Icons.description_outlined,
                 title: 'Terms of service',
-                onTap: () => _open(_termsUrl),
+                onTap: () => _open(context, _termsUrl),
               ),
             ]),
             GroupLabel('Account'),
@@ -210,11 +216,35 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _open(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+  Future<void> _openWhatsApp(BuildContext context) async {
+    try {
+      // whatsapp:// can only be handled by the app itself.
+      final ok = await launchUrl(Uri.parse(_supportWhatsAppApp),
+          mode: LaunchMode.externalApplication);
+      if (ok) return;
+    } catch (_) {
+      // Not installed — fall through to the wa.me web fallback.
     }
+    if (context.mounted) await _open(context, _supportWhatsApp);
+  }
+
+  Future<void> _open(BuildContext context, String url) async {
+    // No canLaunchUrl gate: on Android 11+ it reports false negatives
+    // unless every target app is declared; launching and catching is the
+    // documented pattern.
+    try {
+      final ok = await launchUrl(Uri.parse(url),
+          mode: LaunchMode.externalApplication);
+      if (!ok && context.mounted) _couldNotOpen(context);
+    } catch (_) {
+      if (context.mounted) _couldNotOpen(context);
+    }
+  }
+
+  void _couldNotOpen(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('No app found to open this link')),
+    );
   }
 
   Future<void> _confirmWipe(BuildContext context, WidgetRef ref) async {
