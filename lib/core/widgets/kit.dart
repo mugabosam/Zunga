@@ -519,19 +519,18 @@ class ZKeypad extends StatelessWidget {
                 key(
                   '⌫',
                   onTap: onBackspace,
-                  child: dark
-                      ? Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.18),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(Icons.backspace,
-                              size: 18, color: Colors.white),
-                        )
-                      : const Icon(Icons.backspace_outlined,
-                          size: 22, color: ZTokens.navy),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: dark
+                          ? Colors.white.withValues(alpha: 0.18)
+                          : const Color(0xFF8A8FA8),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.backspace,
+                        size: 18, color: Colors.white),
+                  ),
                 ),
               ]),
             ],
