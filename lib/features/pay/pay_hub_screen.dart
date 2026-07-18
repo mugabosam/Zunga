@@ -67,6 +67,24 @@ class PayHubScreen extends ConsumerWidget {
                 onTap: () => context.push('/government'),
               ),
             ]),
+            GroupLabel(l.tools),
+            RowGroup(children: [
+              BillRow(
+                icon: Icons.call_split,
+                title: l.splitABill,
+                onTap: () => context.push('/split'),
+              ),
+              BillRow(
+                icon: Icons.groups_outlined,
+                title: l.ikimina,
+                onTap: () => context.push('/ikimina'),
+              ),
+              BillRow(
+                icon: Icons.bar_chart_outlined,
+                title: l.merchantMode,
+                onTap: () => context.push('/merchant'),
+              ),
+            ]),
             GroupLabel('Banks'),
             RowGroup(children: [
               BillRow(

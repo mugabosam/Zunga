@@ -9,11 +9,14 @@ import '../../features/activity/activity_screen.dart';
 import '../../features/bills/bills_hub_screen.dart';
 import '../../features/government/government_screen.dart';
 import '../../features/home/home_screen.dart';
+import '../../features/merchant_mode/merchant_dashboard_screen.dart';
 import '../../features/merchant_pay/merchant_pay_screen.dart';
 import '../../features/onboarding/register_screen.dart';
 import '../../features/pay/pay_hub_screen.dart';
 import '../../features/send/send_target_screen.dart';
 import '../../features/settings/profile_screen.dart';
+import '../../features/tools/ikimina_screen.dart';
+import '../../features/tools/split_screen.dart';
 import '../theme/tokens.dart';
 import '../../l10n/app_localizations.dart';
 
@@ -54,6 +57,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/send', builder: (_, _) => const SendTargetScreen()),
       GoRoute(path: '/bills', builder: (_, _) => const BillsHubScreen()),
       GoRoute(path: '/merchant-pay', builder: (_, _) => const MerchantPayScreen()),
+      GoRoute(path: '/split', builder: (_, _) => const SplitScreen()),
+      GoRoute(path: '/ikimina', builder: (_, _) => const IkiminaScreen()),
+      GoRoute(path: '/merchant', builder: (_, _) => const MerchantDashboardScreen()),
       GoRoute(path: '/bank-transfer', builder: (_, _) => const BankTransferScreen()),
       GoRoute(path: '/accounts', builder: (_, _) => const LinkedAccountsScreen()),
       GoRoute(path: '/government', builder: (_, _) => const GovernmentScreen()),

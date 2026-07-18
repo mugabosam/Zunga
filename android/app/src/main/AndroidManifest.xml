@@ -85,5 +85,10 @@
             <data android:scheme="https"/>
         </intent>
         <package android:name="com.whatsapp"/>
+        <!-- Split-a-bill SMS requests. -->
+        <intent>
+            <action android:name="android.intent.action.SENDTO"/>
+            <data android:scheme="sms"/>
+        </intent>
     </queries>
 </manifest>
