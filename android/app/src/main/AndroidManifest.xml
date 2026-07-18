@@ -67,6 +67,17 @@
                 android:resource="@xml/accessibility_service_config"/>
         </service>
 
+        <!-- APK sharing during development (share the running build). -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="rw.zunga.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"/>
+        </provider>
+
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

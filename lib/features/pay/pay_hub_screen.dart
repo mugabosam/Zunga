@@ -19,11 +19,11 @@ class PayHubScreen extends ConsumerWidget {
     void dial(String code) => ref.read(ussdEngineProvider).launchUssd(code);
 
     return Scaffold(
+      appBar: zAppBar(context, title: l.pay),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.only(bottom: 16),
           children: [
-            PageTitleBar(l.pay),
             GroupLabel(l.moneyMovement, topPadding: 4),
             RowGroup(children: [
               BillRow(

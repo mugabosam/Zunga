@@ -27,11 +27,11 @@ class ActivityScreen extends ConsumerWidget {
     final stats = ref.watch(lifetimeStatsProvider);
 
     return Scaffold(
+      appBar: zAppBar(context, title: l.activity),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.only(bottom: 16),
           children: [
-            PageTitleBar(l.activity),
             // Relocated wallet overview: no invented balances — balance
             // is an on-demand USSD check, straight from the carrier.
             ZCard(

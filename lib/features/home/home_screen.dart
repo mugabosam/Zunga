@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/data/profile.dart';
 import '../../core/data/sample_data.dart';
 import '../../core/theme/tokens.dart';
+import '../../core/widgets/drawer.dart';
 import '../../core/widgets/kit.dart';
 import '../../l10n/app_localizations.dart';
 import '../../ussd/providers.dart';
@@ -31,15 +32,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final myNumber = ref.watch(myNumberProvider);
 
     return Scaffold(
+      drawer: const ZungaDrawer(),
       body: SafeArea(
         child: Column(
           children: [
-            // Top bar: wallet pill (tap to switch) + avatar.
+            // Top bar: menu (opens the side drawer) + wallet pill.
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  Builder(
+                    builder: (context) => GestureDetector(
+                      onTap: () => Scaffold.of(context).openDrawer(),
+                      child: Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: ZTokens.surface,
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: ZTokens.shadowSoft,
+                        ),
+                        child: const Icon(Icons.menu,
+                            size: 20, color: ZTokens.navy),
+                      ),
+                    ),
+                  ),
                   GestureDetector(
                     onTap: () => _switchWallet(context, wallet),
                     child: Container(
@@ -84,7 +102,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     ),
                   ),
-                  const AvatarBox('Z', size: 42, dark: true),
                 ],
               ),
             ),
@@ -154,30 +171,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       const SizedBox(height: 12),
                       Center(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text.rich(
-                            TextSpan(
-                              text: _digits.isEmpty ? '0' : rwf(_amount),
-                              style: TextStyle(
-                                fontSize: 58,
-                                fontWeight: FontWeight.w600,
-                                fontFeatures: ZTokens.numFeatures,
-                                color: _digits.isEmpty
-                                    ? Colors.white.withValues(alpha: 0.55)
-                                    : Colors.white,
-                              ),
-                              children: [
-                                TextSpan(
-                                  text: ' RWF',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.white.withValues(alpha: 0.5),
-                                  ),
-                                ),
-                              ],
+                        child: Text.rich(
+                          TextSpan(
+                            text: _digits.isEmpty ? '0' : rwf(_amount),
+                            style: TextStyle(
+                              fontSize: 58,
+                              fontWeight: FontWeight.w600,
+                              fontFeatures: ZTokens.numFeatures,
+                              color: _digits.isEmpty
+                                  ? Colors.white.withValues(alpha: 0.55)
+                                  : Colors.white,
                             ),
+                            children: [
+                              TextSpan(
+                                text: ' RWF',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),

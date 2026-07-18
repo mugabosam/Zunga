@@ -1,14 +1,13 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/data/profile.dart';
 import '../../features/accounts/bank_transfer_screen.dart';
 import '../../features/accounts/linked_accounts_screen.dart';
 import '../../features/activity/activity_screen.dart';
 import '../../features/bills/bills_hub_screen.dart';
 import '../../features/government/government_screen.dart';
 import '../../features/home/home_screen.dart';
+import '../../features/legal/legal_screen.dart';
 import '../../features/merchant_mode/merchant_dashboard_screen.dart';
 import '../../features/merchant_pay/merchant_pay_screen.dart';
 import '../../features/onboarding/register_screen.dart';
@@ -17,9 +16,10 @@ import '../../features/send/send_target_screen.dart';
 import '../../features/settings/profile_screen.dart';
 import '../../features/tools/ikimina_screen.dart';
 import '../../features/tools/split_screen.dart';
-import '../theme/tokens.dart';
-import '../../l10n/app_localizations.dart';
+import '../data/profile.dart';
 
+/// Flat navigation: home owns the full screen (keypad-first, side
+/// drawer); every other surface is pushed on top of it.
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/home',
@@ -37,109 +37,21 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/register', builder: (_, _) => const RegisterScreen()),
-      StatefulShellRoute.indexedStack(
-        builder: (context, state, shell) => _NavShell(shell: shell),
-        branches: [
-          StatefulShellBranch(routes: [
-            GoRoute(path: '/home', builder: (_, _) => const HomeScreen()),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(path: '/pay', builder: (_, _) => const PayHubScreen()),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(path: '/activity', builder: (_, _) => const ActivityScreen()),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
-          ]),
-        ],
-      ),
+      GoRoute(path: '/home', builder: (_, _) => const HomeScreen()),
+      GoRoute(path: '/pay', builder: (_, _) => const PayHubScreen()),
+      GoRoute(path: '/activity', builder: (_, _) => const ActivityScreen()),
+      GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
       GoRoute(path: '/send', builder: (_, _) => const SendTargetScreen()),
       GoRoute(path: '/bills', builder: (_, _) => const BillsHubScreen()),
       GoRoute(path: '/merchant-pay', builder: (_, _) => const MerchantPayScreen()),
-      GoRoute(path: '/split', builder: (_, _) => const SplitScreen()),
-      GoRoute(path: '/ikimina', builder: (_, _) => const IkiminaScreen()),
-      GoRoute(path: '/merchant', builder: (_, _) => const MerchantDashboardScreen()),
       GoRoute(path: '/bank-transfer', builder: (_, _) => const BankTransferScreen()),
       GoRoute(path: '/accounts', builder: (_, _) => const LinkedAccountsScreen()),
       GoRoute(path: '/government', builder: (_, _) => const GovernmentScreen()),
+      GoRoute(path: '/split', builder: (_, _) => const SplitScreen()),
+      GoRoute(path: '/ikimina', builder: (_, _) => const IkiminaScreen()),
+      GoRoute(path: '/merchant', builder: (_, _) => const MerchantDashboardScreen()),
+      GoRoute(path: '/legal/privacy', builder: (_, _) => const PrivacyPolicyScreen()),
+      GoRoute(path: '/legal/terms', builder: (_, _) => const TermsScreen()),
     ],
   );
 });
-
-/// Bottom navigation shell: Home · Pay · Activity · Profile.
-class _NavShell extends StatelessWidget {
-  const _NavShell({required this.shell});
-
-  final StatefulNavigationShell shell;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    final items = [
-      (Icons.home_outlined, l.navHome),
-      (Icons.arrow_forward, l.navPay),
-      (Icons.bar_chart_outlined, l.navActivity),
-      (Icons.person_outline, l.navProfile),
-    ];
-    return Scaffold(
-      extendBody: true,
-      body: shell,
-      bottomNavigationBar: Container(
-        clipBehavior: Clip.antiAlias,
-        decoration: const BoxDecoration(
-          color: ZTokens.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-          boxShadow: [
-            BoxShadow(
-              color: Color(0x2E232C63),
-              blurRadius: 24,
-              offset: Offset(0, -8),
-              spreadRadius: -14,
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: SizedBox(
-            height: 68,
-            child: Row(
-              children: [
-                for (var i = 0; i < items.length; i++)
-                  Expanded(
-                    child: InkWell(
-                      onTap: () => shell.goBranch(i, initialLocation: i == shell.currentIndex),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            items[i].$1,
-                            size: 22,
-                            color: i == shell.currentIndex
-                                ? ZTokens.navy
-                                : ZTokens.ink3,
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            items[i].$2,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: i == shell.currentIndex
-                                  ? FontWeight.w600
-                                  : FontWeight.w500,
-                              color: i == shell.currentIndex
-                                  ? ZTokens.navy
-                                  : ZTokens.ink3,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

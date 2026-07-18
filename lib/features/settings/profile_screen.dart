@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/app_services.dart';
 import '../../core/data/profile.dart';
 import '../../core/data/settings.dart';
 import '../../core/data/transactions.dart';
@@ -26,11 +27,6 @@ class ProfileScreen extends ConsumerWidget {
   /// fallback when WhatsApp is not installed (shows its install page).
   static const _supportWhatsAppApp = 'whatsapp://send?phone=250728670972';
   static const _supportWhatsApp = 'https://wa.me/250728670972';
-  // Real, resolvable pages — swap for zunga.rw once the domain is live.
-  static const _privacyUrl =
-      'https://github.com/mugabosam/Zunga/blob/main/PRIVACY.md';
-  static const _termsUrl =
-      'https://github.com/mugabosam/Zunga/blob/main/TERMS.md';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -41,11 +37,11 @@ class ProfileScreen extends ConsumerWidget {
     final stats = ref.watch(lifetimeStatsProvider);
 
     return Scaffold(
+      appBar: zAppBar(context, title: l.profile),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.only(bottom: 16),
           children: [
-            PageTitleBar(l.profile),
             // Identity + lifetime stats (confirmed transactions only).
             ZCard(
               radius: ZTokens.radiusCard,
@@ -170,9 +166,18 @@ class ProfileScreen extends ConsumerWidget {
               BillRow(
                 icon: Icons.share_outlined,
                 title: 'Share the app',
-                subtitle: 'Invite friends and family to Zunga',
-                onTap: () => _open(context,
-                    'https://wa.me/?text=${Uri.encodeComponent('Zunga — pay anyone in Rwanda without typing USSD codes. https://github.com/mugabosam/Zunga')}'),
+                subtitle: 'Send the app to friends and family',
+                onTap: () async {
+                  // Development: shares this exact build's APK.
+                  // At Play launch this becomes the store listing.
+                  final ok =
+                      await ref.read(appServicesProvider).shareApk();
+                  if (!ok && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Sharing unavailable')),
+                    );
+                  }
+                },
               ),
             ]),
             GroupLabel('Legal'),
@@ -180,12 +185,12 @@ class ProfileScreen extends ConsumerWidget {
               BillRow(
                 icon: Icons.privacy_tip_outlined,
                 title: 'Privacy Policy',
-                onTap: () => _open(context, _privacyUrl),
+                onTap: () => context.push('/legal/privacy'),
               ),
               BillRow(
                 icon: Icons.description_outlined,
-                title: 'Terms of service',
-                onTap: () => _open(context, _termsUrl),
+                title: 'Terms of Service',
+                onTap: () => context.push('/legal/terms'),
               ),
             ]),
             GroupLabel('Account'),
