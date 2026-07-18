@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- Matches the app scaffold background so launch flows seamlessly
+         into the home screen. -->
+    <color name="splash_background">#F6F6FA</color>
+</resources>

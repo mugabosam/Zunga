@@ -11,6 +11,7 @@ import '../../features/legal/legal_screen.dart';
 import '../../features/merchant_mode/merchant_dashboard_screen.dart';
 import '../../features/merchant_pay/merchant_pay_screen.dart';
 import '../../features/onboarding/register_screen.dart';
+import '../../features/onboarding/splash_screen.dart';
 import '../../features/pay/pay_hub_screen.dart';
 import '../../features/send/send_target_screen.dart';
 import '../../features/settings/profile_screen.dart';
@@ -22,10 +23,11 @@ import '../data/profile.dart';
 /// drawer); every other surface is pushed on top of it.
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    initialLocation: '/home',
+    initialLocation: '/splash',
     // One-time setup gate: until the user registers the number they pay
-    // from, every route lands on /register.
+    // from, every route (after the splash intro) lands on /register.
     redirect: (context, state) {
+      if (state.matchedLocation == '/splash') return null;
       final registered = ref.read(myNumberProvider) != null;
       if (!registered && state.matchedLocation != '/register') {
         return '/register';
@@ -36,6 +38,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
+      GoRoute(path: '/splash', builder: (_, _) => const SplashScreen()),
       GoRoute(path: '/register', builder: (_, _) => const RegisterScreen()),
       GoRoute(path: '/home', builder: (_, _) => const HomeScreen()),
       GoRoute(path: '/pay', builder: (_, _) => const PayHubScreen()),
