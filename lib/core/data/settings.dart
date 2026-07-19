@@ -11,7 +11,6 @@ class AppSettings {
     this.saveRecents = true,
     this.saveTransactions = true,
     this.notifications = true,
-    this.coachMarkSeen = false,
   });
 
   /// Recipient suggestions from the device contact list (lookup is
@@ -25,40 +24,33 @@ class AppSettings {
   final bool saveTransactions;
   final bool notifications;
 
-  /// Set after the first send — the carrier-PIN explainer shows once.
-  final bool coachMarkSeen;
-
   AppSettings copyWith({
     bool? enableContacts,
     bool? saveRecents,
     bool? saveTransactions,
     bool? notifications,
-    bool? coachMarkSeen,
   }) {
     return AppSettings(
       enableContacts: enableContacts ?? this.enableContacts,
       saveRecents: saveRecents ?? this.saveRecents,
       saveTransactions: saveTransactions ?? this.saveTransactions,
       notifications: notifications ?? this.notifications,
-      coachMarkSeen: coachMarkSeen ?? this.coachMarkSeen,
     );
   }
 
   Map<String, bool> toMap() => {
-        'enableContacts': enableContacts,
-        'saveRecents': saveRecents,
-        'saveTransactions': saveTransactions,
-        'notifications': notifications,
-        'coachMarkSeen': coachMarkSeen,
-      };
+    'enableContacts': enableContacts,
+    'saveRecents': saveRecents,
+    'saveTransactions': saveTransactions,
+    'notifications': notifications,
+  };
 
   factory AppSettings.fromMap(Map<String, dynamic> map) => AppSettings(
-        enableContacts: map['enableContacts'] as bool? ?? true,
-        saveRecents: map['saveRecents'] as bool? ?? true,
-        saveTransactions: map['saveTransactions'] as bool? ?? true,
-        notifications: map['notifications'] as bool? ?? true,
-        coachMarkSeen: map['coachMarkSeen'] as bool? ?? false,
-      );
+    enableContacts: map['enableContacts'] as bool? ?? true,
+    saveRecents: map['saveRecents'] as bool? ?? true,
+    saveTransactions: map['saveTransactions'] as bool? ?? true,
+    notifications: map['notifications'] as bool? ?? true,
+  );
 }
 
 class SettingsNotifier extends Notifier<AppSettings> {
@@ -89,5 +81,6 @@ class SettingsNotifier extends Notifier<AppSettings> {
   }
 }
 
-final settingsProvider =
-    NotifierProvider<SettingsNotifier, AppSettings>(SettingsNotifier.new);
+final settingsProvider = NotifierProvider<SettingsNotifier, AppSettings>(
+  SettingsNotifier.new,
+);

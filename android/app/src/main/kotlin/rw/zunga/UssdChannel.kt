@@ -55,6 +55,7 @@ object UssdChannel {
                 "lookupContactName" -> lookupContactName(
                     activity, call.argument<String>("number")!!, result,
                 )
+                "getContacts" -> getContacts(activity, result)
                 "sendReply" -> {
                     var input = call.argument<String>("input") ?: ""
                     val ok = ZungaAccessibilityService.instance?.sendReply(input) ?: false
@@ -205,5 +206,40 @@ object UssdChannel {
             }
         }
         result.success(null)
+    }
+
+    /**
+     * Full device contact list (name + number), read on-device only so
+     * the send screen can show and search every number on the phone.
+     * Returns empty without READ_CONTACTS — and requests it for next time.
+     */
+    private fun getContacts(activity: Activity, result: MethodChannel.Result) {
+        if (ContextCompat.checkSelfPermission(activity, Manifest.permission.READ_CONTACTS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                activity, arrayOf(Manifest.permission.READ_CONTACTS), CONTACTS_PERMISSION_REQUEST
+            )
+            result.success(emptyList<Map<String, String>>())
+            return
+        }
+        val contacts = mutableListOf<Map<String, String>>()
+        activity.contentResolver.query(
+            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+            arrayOf(
+                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                ContactsContract.CommonDataKinds.Phone.NUMBER,
+            ),
+            null,
+            null,
+            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC",
+        )?.use { cursor ->
+            while (cursor.moveToNext() && contacts.size < 2000) {
+                val name = cursor.getString(0) ?: continue
+                val number = cursor.getString(1) ?: continue
+                contacts.add(mapOf("name" to name, "number" to number))
+            }
+        }
+        result.success(contacts)
     }
 }

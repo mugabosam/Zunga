@@ -107,6 +107,23 @@ class UssdEngine {
     }
   }
 
+  /// Full device contact list (name, number) — read on-device only, for
+  /// the send screen's contact list and search. Empty when the contacts
+  /// permission is not granted.
+  Future<List<(String name, String number)>> getContacts() async {
+    try {
+      final raw = await _channel.invokeListMethod<Map>('getContacts');
+      return [
+        for (final m in raw ?? const <Map>[])
+          (m['name'] as String, m['number'] as String),
+      ];
+    } on MissingPluginException {
+      return const [];
+    } on PlatformException {
+      return const [];
+    }
+  }
+
   /// On-device contact lookup so the send screen shows who the number
   /// belongs to before paying. Returns null when unknown or the contacts
   /// permission is not granted.

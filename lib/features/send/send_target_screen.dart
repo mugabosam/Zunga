@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/data/contacts.dart';
 import '../../core/data/name_lookup.dart';
 import '../../core/data/recents.dart';
 import '../../core/data/sample_data.dart';
@@ -151,7 +152,7 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
                   child: TextField(
                     controller: _controller,
                     autofocus: true,
-                    keyboardType: TextInputType.phone,
+                    keyboardType: TextInputType.text,
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -161,7 +162,7 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
                     decoration: const InputDecoration(
                       border: InputBorder.none,
                       isDense: true,
-                      hintText: 'Number, MoMo code, meter or account',
+                      hintText: 'Name, number, code, meter or account',
                       hintStyle: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
@@ -316,6 +317,9 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
                     ],
                   ),
                 ],
+                // Every contact on the phone, searchable by name or
+                // number — read on-device only.
+                ..._contactsSection(flow),
               ],
             ),
           ),
@@ -337,6 +341,51 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
         ],
       ),
     );
+  }
+
+  /// All device contacts under the recents; typing letters searches
+  /// names, typing digits filters numbers. Hidden once a full
+  /// destination is detected.
+  List<Widget> _contactsSection(SendFlowState flow) {
+    final contacts =
+        ref.watch(contactsProvider).value ?? const <PhoneContact>[];
+    if (contacts.isEmpty) return const [];
+
+    final raw = flow.input.trim();
+    final digits = raw.replaceAll(RegExp(r'\D'), '');
+    final hasLetters = raw.contains(RegExp(r'[A-Za-z]'));
+
+    List<PhoneContact> shown;
+    if (raw.isEmpty) {
+      shown = contacts;
+    } else if (hasLetters) {
+      final q = raw.toLowerCase();
+      shown = contacts.where((c) => c.name.toLowerCase().contains(q)).toList();
+    } else if (flow.route == PayRoute.incomplete && digits.isNotEmpty) {
+      shown = contacts.where((c) => c.msisdn.contains(digits)).toList();
+    } else {
+      return const [];
+    }
+    if (shown.isEmpty) return const [];
+
+    return [
+      GroupLabel(raw.isEmpty ? 'All contacts' : 'Contacts'),
+      RowGroup(
+        children: [
+          for (final c in shown.take(60))
+            BillRow(
+              leading: AvatarBox(c.initials, size: 42),
+              title: c.name,
+              subtitle: _formatNumber(c.msisdn),
+              showChevron: false,
+              onTap: () {
+                _controller.text = c.msisdn;
+                FocusScope.of(context).unfocus();
+              },
+            ),
+        ],
+      ),
+    ];
   }
 
   Future<void> _chooseRoute(BuildContext context, SendFlowState flow) async {
@@ -406,17 +455,6 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
   Future<void> _pay(BuildContext context) async {
     final flow = ref.read(sendFlowProvider);
     final notifier = ref.read(sendFlowProvider.notifier);
-
-    // First-send coach mark; backing out records nothing.
-    if (!ref.read(settingsProvider).coachMarkSeen) {
-      final proceed = await _showCoachMark(context, flow);
-      if (proceed != true || !context.mounted) return;
-      final s = ref.read(settingsProvider);
-      await ref
-          .read(settingsProvider.notifier)
-          .update(s.copyWith(coachMarkSeen: true));
-    }
-
     final settings = ref.read(settingsProvider);
     final isPhone =
         flow.route == PayRoute.mtnNumber || flow.route == PayRoute.airtelNumber;
@@ -463,80 +501,6 @@ class _SendTargetScreenState extends ConsumerState<SendTargetScreen> {
     if (!context.mounted) return;
     notifier.reset();
     context.go('/home');
-  }
-
-  Future<bool?> _showCoachMark(BuildContext context, SendFlowState flow) {
-    final carrier = flow.route == PayRoute.airtelNumber && !flow.isCrossNetwork
-        ? 'Airtel'
-        : 'MTN';
-    return showModalBottomSheet<bool>(
-      context: context,
-      backgroundColor: ZTokens.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (sheet) => SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(
-            24,
-            12,
-            24,
-            24 + MediaQuery.of(sheet).viewInsets.bottom,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 18),
-                decoration: BoxDecoration(
-                  color: ZTokens.line,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Container(
-                width: 52,
-                height: 52,
-                margin: const EdgeInsets.only(bottom: 14),
-                decoration: BoxDecoration(
-                  color: ZTokens.accentTint,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.lock_outline,
-                  color: ZTokens.accent,
-                  size: 24,
-                ),
-              ),
-              Text(
-                '$carrier will ask for your PIN',
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'The next popup is your network\'s — your PIN goes to them, '
-                'never to Zunga.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13.5,
-                  color: ZTokens.ink2,
-                  height: 1.55,
-                ),
-              ),
-              const SizedBox(height: 20),
-              FilledButton(
-                onPressed: () => Navigator.pop(sheet, true),
-                child: const Text('Continue'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   String _formatNumber(String raw) {
