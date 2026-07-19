@@ -40,123 +40,158 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Scaffold(
         backgroundColor: ZTokens.bg,
         drawer: const ZungaDrawer(),
+        // The home never moves or scrolls — not even when a keyboard
+        // rises. Sizes adapt below instead.
+        resizeToAvoidBottomInset: false,
         body: Column(
           children: [
             Expanded(
               child: SafeArea(
                 bottom: false,
-                child: Column(
-                  children: [
-                    // Menu button — opens the side drawer.
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Builder(
-                          builder: (context) => GestureDetector(
-                            onTap: () => Scaffold.of(context).openDrawer(),
-                            child: Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: ZTokens.surface,
-                                borderRadius: BorderRadius.circular(15),
-                                border: Border.all(
-                                    color: ZTokens.navy, width: 1.5),
+                child: LayoutBuilder(
+                  builder: (context, viewport) {
+                    // Card takes ~a third of the screen; the keypad sits
+                    // low, toward the action bar — never overflowing.
+                    final cardHeight = (viewport.maxHeight * 0.36).clamp(
+                      160.0,
+                      240.0,
+                    );
+                    return Column(
+                      children: [
+                        // Menu button — opens the side drawer.
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Builder(
+                              builder: (context) => GestureDetector(
+                                onTap: () => Scaffold.of(context).openDrawer(),
+                                child: Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: ZTokens.surface,
+                                    borderRadius: BorderRadius.circular(15),
+                                    border: Border.all(
+                                      color: ZTokens.navy,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.menu,
+                                    size: 20,
+                                    color: ZTokens.navy,
+                                  ),
+                                ),
                               ),
-                              child: const Icon(Icons.menu,
-                                  size: 20, color: ZTokens.navy),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                    // Amount card with the active carrier chip.
-                    Container(
-                      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-                      height: 240,
-                      decoration: BoxDecoration(
-                        gradient: ZTokens.navyGradient,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: ZTokens.shadow,
-                      ),
-                      child: Stack(
-                        children: [
-                          Positioned(
-                            top: 16,
-                            right: 18,
-                            child: GestureDetector(
-                              onTap: () => _switchWallet(context, wallet),
-                              child: Row(
-                                children: [
-                                  const Text('🇷🇼',
-                                      style: TextStyle(fontSize: 15)),
-                                  const SizedBox(width: 7),
-                                  Text(
-                                    wallet == 'MTN' ? 'MTN' : 'Airtel',
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white
-                                          .withValues(alpha: 0.85),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                        // Amount card with the active carrier chip.
+                        Container(
+                          margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                          height: cardHeight,
+                          decoration: BoxDecoration(
+                            gradient: ZTokens.navyGradient,
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: ZTokens.shadow,
                           ),
-                          Center(
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 24),
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text.rich(
-                                  TextSpan(
-                                    text: _digits.isEmpty ? '0' : rwf(_amount),
-                                    style: const TextStyle(
-                                      fontSize: 56,
-                                      fontWeight: FontWeight.w700,
-                                      fontFeatures: ZTokens.numFeatures,
-                                      color: Colors.white,
-                                    ),
+                          child: Stack(
+                            children: [
+                              Positioned(
+                                top: 16,
+                                right: 18,
+                                child: GestureDetector(
+                                  onTap: () => _switchWallet(context, wallet),
+                                  child: Row(
                                     children: [
-                                      TextSpan(
-                                        text: ' RWF',
+                                      const Text(
+                                        '🇷🇼',
+                                        style: TextStyle(fontSize: 15),
+                                      ),
+                                      const SizedBox(width: 7),
+                                      Text(
+                                        wallet == 'MTN' ? 'MTN' : 'Airtel',
                                         style: TextStyle(
-                                          fontSize: 18,
+                                          fontSize: 15,
                                           fontWeight: FontWeight.w600,
-                                          color: Colors.white
-                                              .withValues(alpha: 0.85),
+                                          color: Colors.white.withValues(
+                                            alpha: 0.85,
+                                          ),
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
                               ),
+                              Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                  ),
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text.rich(
+                                      TextSpan(
+                                        text: _digits.isEmpty
+                                            ? '0'
+                                            : rwf(_amount),
+                                        style: const TextStyle(
+                                          fontSize: 56,
+                                          fontWeight: FontWeight.w700,
+                                          fontFeatures: ZTokens.numFeatures,
+                                          color: Colors.white,
+                                        ),
+                                        children: [
+                                          TextSpan(
+                                            text: ' RWF',
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white.withValues(
+                                                alpha: 0.85,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Keypad — pushed low, toward the action bar.
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 6),
+                              child: ZKeypad(
+                                onDigit: (d) {
+                                  if (_digits.length < 8) {
+                                    setState(() => _digits += d);
+                                  }
+                                },
+                                onBackspace: () {
+                                  if (_digits.isNotEmpty) {
+                                    setState(
+                                      () => _digits = _digits.substring(
+                                        0,
+                                        _digits.length - 1,
+                                      ),
+                                    );
+                                  }
+                                },
+                                onClear: () => setState(() => _digits = ''),
+                              ),
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                    // Keypad — navy digits on the light surface.
-                    Expanded(
-                      child: ZKeypad(
-                        onDigit: (d) {
-                          if (_digits.length < 8) {
-                            setState(() => _digits += d);
-                          }
-                        },
-                        onBackspace: () {
-                          if (_digits.isNotEmpty) {
-                            setState(() => _digits =
-                                _digits.substring(0, _digits.length - 1));
-                          }
-                        },
-                        onClear: () => setState(() => _digits = ''),
-                      ),
-                    ),
-                  ],
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -184,20 +219,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         child: OutlinedButton.icon(
                           onPressed: () => ref
                               .read(ussdEngineProvider)
-                              .launchUssd(wallet == 'MTN'
-                                  ? mtnBalanceCode
-                                  : airtelBalanceCode),
+                              .launchUssd(
+                                wallet == 'MTN'
+                                    ? mtnBalanceCode
+                                    : airtelBalanceCode,
+                              ),
                           style: OutlinedButton.styleFrom(
                             minimumSize: const Size.fromHeight(54),
                             side: const BorderSide(
-                                color: ZTokens.navy, width: 1.5),
+                              color: ZTokens.navy,
+                              width: 1.5,
+                            ),
                             foregroundColor: ZTokens.navy,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
                           ),
-                          icon: const Icon(Icons.credit_card_outlined,
-                              size: 19),
+                          icon: const Icon(
+                            Icons.credit_card_outlined,
+                            size: 19,
+                          ),
                           label: const Text('Balance'),
                         ),
                       ),
@@ -254,18 +295,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const Text('Pay from',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+            const Text(
+              'Pay from',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 8),
             for (final w in const ['MTN', 'Airtel'])
               ListTile(
                 leading: AvatarBox(w == 'MTN' ? 'M' : 'A', size: 40),
-                title: Text(w == 'MTN' ? 'MTN MoMo' : 'Airtel Money',
-                    style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w600)),
+                title: Text(
+                  w == 'MTN' ? 'MTN MoMo' : 'Airtel Money',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 trailing: w == current
-                    ? const Icon(Icons.check_circle,
-                        color: ZTokens.accent, size: 20)
+                    ? const Icon(
+                        Icons.check_circle,
+                        color: ZTokens.accent,
+                        size: 20,
+                      )
                     : null,
                 onTap: () => Navigator.pop(sheet, w),
               ),

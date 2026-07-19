@@ -81,8 +81,8 @@ class AvatarBox extends StatelessWidget {
           color: dark
               ? Colors.white
               : accent
-                  ? ZTokens.accent
-                  : ZTokens.navy,
+              ? ZTokens.accent
+              : ZTokens.navy,
         ),
       ),
     );
@@ -136,23 +136,28 @@ class BillRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: ZText.rowTitle, overflow: TextOverflow.ellipsis),
+                  Text(
+                    title,
+                    style: ZText.rowTitle,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   if (subtitle != null || dueText != null)
                     Text.rich(
-                      TextSpan(children: [
-                        if (subtitle != null)
-                          TextSpan(text: subtitle, style: ZText.rowSub),
-                        if (dueText != null)
-                          TextSpan(
-                            text: dueText,
-                            style: const TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
-                              color: ZTokens.accent,
+                      TextSpan(
+                        children: [
+                          if (subtitle != null)
+                            TextSpan(text: subtitle, style: ZText.rowSub),
+                          if (dueText != null)
+                            TextSpan(
+                              text: dueText,
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                                color: ZTokens.accent,
+                              ),
                             ),
-                          ),
-                      ]),
+                        ],
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                 ],
@@ -160,8 +165,11 @@ class BillRow extends StatelessWidget {
             ),
             trailing ??
                 (showChevron
-                    ? const Icon(Icons.chevron_right,
-                        size: 20, color: ZTokens.ink3)
+                    ? const Icon(
+                        Icons.chevron_right,
+                        size: 20,
+                        color: ZTokens.ink3,
+                      )
                     : const SizedBox.shrink()),
           ],
         ),
@@ -256,10 +264,16 @@ class TxRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: ZText.rowTitle, overflow: TextOverflow.ellipsis),
-                Text(subtitle,
-                    style: ZText.rowSub, overflow: TextOverflow.ellipsis),
+                Text(
+                  title,
+                  style: ZText.rowTitle,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  subtitle,
+                  style: ZText.rowSub,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
@@ -331,14 +345,21 @@ class AccentBanner extends StatelessWidget {
                       ),
                     ),
                   ),
-                Text(title,
-                    style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w600)),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 if (subtitle != null)
                   Text(
                     subtitle!,
                     style: const TextStyle(
-                        fontSize: 12.5, color: ZTokens.ink2, height: 1.5),
+                      fontSize: 12.5,
+                      color: ZTokens.ink2,
+                      height: 1.5,
+                    ),
                   ),
               ],
             ),
@@ -380,7 +401,10 @@ class RailNote extends StatelessWidget {
             child: Text(
               text,
               style: const TextStyle(
-                  fontSize: 12.5, color: ZTokens.ink2, height: 1.5),
+                fontSize: 12.5,
+                color: ZTokens.ink2,
+                height: 1.5,
+              ),
             ),
           ),
         ],
@@ -468,7 +492,7 @@ class ZKeypad extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final rowHeight = constraints.hasBoundedHeight
-              ? (constraints.maxHeight / 4).clamp(42.0, 64.0)
+              ? (constraints.maxHeight / 4).clamp(34.0, 64.0)
               : 60.0;
           final digitSize = rowHeight >= 56 ? 24.0 : 20.0;
           final digitColor = dark ? Colors.white : ZTokens.navy;
@@ -481,13 +505,15 @@ class ZKeypad extends StatelessWidget {
                 child: SizedBox(
                   height: rowHeight,
                   child: Center(
-                    child: child ??
+                    child:
+                        child ??
                         Text(
                           label,
                           style: TextStyle(
-                              fontSize: digitSize,
-                              fontWeight: FontWeight.w600,
-                              color: digitColor),
+                            fontSize: digitSize,
+                            fontWeight: FontWeight.w600,
+                            color: digitColor,
+                          ),
                         ),
                   ),
                 ),
@@ -501,38 +527,46 @@ class ZKeypad extends StatelessWidget {
               Row(children: [key('1'), key('2'), key('3')]),
               Row(children: [key('4'), key('5'), key('6')]),
               Row(children: [key('7'), key('8'), key('9')]),
-              Row(children: [
-                onClear != null
-                    ? key(
-                        'Clear',
-                        onTap: onClear,
-                        child: const Text(
+              Row(
+                children: [
+                  onClear != null
+                      ? key(
                           'Clear',
-                          style: TextStyle(
+                          onTap: onClear,
+                          child: const Text(
+                            'Clear',
+                            style: TextStyle(
                               fontSize: 13.5,
                               fontWeight: FontWeight.w600,
-                              color: ZTokens.accent),
-                        ),
-                      )
-                    : key('·', onTap: () {}),
-                key('0'),
-                key(
-                  '⌫',
-                  onTap: onBackspace,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: dark
-                          ? Colors.white.withValues(alpha: 0.18)
-                          : const Color(0xFF8A8FA8),
-                      borderRadius: BorderRadius.circular(8),
+                              color: ZTokens.accent,
+                            ),
+                          ),
+                        )
+                      : key('·', onTap: () {}),
+                  key('0'),
+                  key(
+                    '⌫',
+                    onTap: onBackspace,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: dark
+                            ? Colors.white.withValues(alpha: 0.18)
+                            : const Color(0xFF8A8FA8),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.backspace,
+                        size: 18,
+                        color: Colors.white,
+                      ),
                     ),
-                    child: const Icon(Icons.backspace,
-                        size: 18, color: Colors.white),
                   ),
-                ),
-              ]),
+                ],
+              ),
             ],
           );
         },
