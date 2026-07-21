@@ -34,12 +34,14 @@ for the PIN. That is the entire product.
 | Action | Code |
 | --- | --- |
 | MTN → MTN send | `*182*1*1*{number}*{amount}#` (inline, only PIN left) |
+| Airtel → Airtel send | `*500*1*1*{number}*{amount}#` (inline, only PIN left) |
 | Cross-network send (eKash, any direction) | `*182*1*2#` |
 | MoMo Pay merchant | `*182*8*1*{code}#` |
-| Airtel → Airtel | `*500#` (Airtel Money menu) |
 | MTN balance | `*182*6*1#` |
 | Airtel balance | `*500*5*1*1#` |
-| MTN menu root | `*182#` |
+| MTN withdraw | `*182*7*2#` |
+| Airtel withdraw | pending — opens `*500#` menu until provided |
+| MTN menu root | `*182#` · Airtel menu root `*500#` |
 
 eKash bank access codes (BK `*334*2*4#`, Equity `*555*2#`, etc.) live in
 `assets/configs/menu_configs.json` and `lib/core/data/sample_data.dart`

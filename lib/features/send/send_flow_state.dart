@@ -9,9 +9,9 @@ import '../../ussd/providers.dart';
 ///
 /// Codes (verified, July 2026):
 ///  - MTN → MTN:            *182*1*1*number*amount#  (only the PIN left)
+///  - Airtel → Airtel:      *500*1*1*number*amount#  (only the PIN left)
 ///  - Cross-network (eKash): *182*1*2#   — works from ANY network
 ///  - MoMo Pay merchant:     *182*8*1*code#
-///  - Airtel → Airtel:       *500#  (Airtel Money menu)
 ///  - Bank via eKash:        the bank's own access code (bank picker)
 enum PayRoute { mtnNumber, airtelNumber, momoPay, meter, bank, incomplete }
 
@@ -102,7 +102,8 @@ class SendFlowState {
         PayRoute.mtnNumber =>
           amount > 0 ? '*182*1*1*$digits*$amount#' : '*182*1*1#',
         PayRoute.airtelNumber when isCrossNetwork => '*182*1*2#',
-        PayRoute.airtelNumber => '*500#',
+        PayRoute.airtelNumber =>
+          amount > 0 ? '*500*1*1*$digits*$amount#' : '*500*1*1#',
         // EUCL deep path ships via the signed config once verified on a
         // live SIM; until then the MoMo menu carries the token purchase.
         PayRoute.meter => mtnMenuRoot,

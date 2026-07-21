@@ -1,7 +1,21 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:zunga/core/data/sample_data.dart';
 import 'package:zunga/features/send/send_flow_state.dart';
 
 void main() {
+  group('Balance & withdraw codes per active wallet', () {
+    test('MTN balance *182*6*1#, withdraw *182*7*2#', () {
+      expect(balanceCodeFor('MTN'), '*182*6*1#');
+      expect(withdrawCodeFor('MTN'), '*182*7*2#');
+    });
+
+    test('Airtel balance *500*5*1*1#; withdraw falls back to menu', () {
+      expect(balanceCodeFor('Airtel'), '*500*5*1*1#');
+      // Airtel withdraw code pending — opens the Airtel Money menu.
+      expect(withdrawCodeFor('Airtel'), '*500#');
+    });
+  });
+
   group('Smart destination detection — one input, never a silent guess', () {
     test('10 digits starting 078/079 → MTN number', () {
       expect(detectRoute('0788412903'), PayRoute.mtnNumber);
@@ -69,13 +83,14 @@ void main() {
       expect(s.dialCode, '*182*1*2#');
     });
 
-    test('Airtel SIM → Airtel number opens the Airtel Money menu', () {
+    test('Airtel SIM → Airtel number pre-fills *500*1*1*number*amount#', () {
       const s = SendFlowState(
         simNetworks: {SimNetwork.airtel},
         input: '0733208517',
         amount: 5000,
       );
-      expect(s.dialCode, '*500#');
+      expect(s.isCrossNetwork, isFalse);
+      expect(s.dialCode, '*500*1*1*0733208517*5000#');
     });
 
     test('MoMo Pay code pre-fills *182*8*1*code#', () {

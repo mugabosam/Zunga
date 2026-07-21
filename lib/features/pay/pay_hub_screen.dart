@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/data/profile.dart';
 import '../../core/data/sample_data.dart';
 import '../../core/widgets/kit.dart';
 import '../../core/widgets/scaffold.dart';
@@ -15,6 +16,7 @@ class PayHubScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
+    final wallet = ref.watch(activeWalletProvider);
 
     void dial(String code) => ref.read(ussdEngineProvider).launchUssd(code);
 
@@ -47,8 +49,8 @@ class PayHubScreen extends ConsumerWidget {
               BillRow(
                 icon: Icons.south_outlined,
                 title: l.withdrawCash,
-                subtitle: 'Agent code',
-                onTap: () => dial(mtnMenuRoot),
+                subtitle: wallet == 'Airtel' ? 'Airtel Money' : 'MTN · *182*7*2#',
+                onTap: () => dial(withdrawCodeFor(wallet)),
               ),
             ]),
             GroupLabel(l.billsUtilities),

@@ -55,3 +55,14 @@ const airtelMenuRoot = '*500#';
 /// live SIMs: MTN *182*6*1#, Airtel *500*5*1*1#.
 const mtnBalanceCode = '*182*6*1#';
 const airtelBalanceCode = '*500*5*1*1#';
+
+/// Agent cash withdrawal. MTN is *182*7*2# (SIM-verified). The Airtel
+/// withdraw code is pending — until it lands, Airtel opens its own menu.
+const mtnWithdrawCode = '*182*7*2#';
+const airtelWithdrawCode = '*500#';
+
+/// Balance / withdraw codes for the active wallet ('MTN' | 'Airtel').
+String balanceCodeFor(String wallet) =>
+    wallet == 'Airtel' ? airtelBalanceCode : mtnBalanceCode;
+String withdrawCodeFor(String wallet) =>
+    wallet == 'Airtel' ? airtelWithdrawCode : mtnWithdrawCode;

@@ -31,6 +31,16 @@
           "inline_template": "*182*8*1*{code}#",
           "steps": [],
           "success_contains": []
+        },
+        "balance_check": {
+          "root": "*182*6*1#",
+          "steps": [],
+          "success_contains": []
+        },
+        "withdraw": {
+          "root": "*182*7*2#",
+          "steps": [],
+          "success_contains": []
         }
       }
     },
@@ -42,6 +52,12 @@
       "flows": {
         "menu_root": {
           "root": "*500#",
+          "steps": [],
+          "success_contains": []
+        },
+        "send_same_network": {
+          "root": "*500*1*1#",
+          "inline_template": "*500*1*1*{msisdn}*{amount}#",
           "steps": [],
           "success_contains": []
         },
