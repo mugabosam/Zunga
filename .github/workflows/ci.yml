@@ -42,5 +42,17 @@ jobs:
       - name: Dependency audit
         run: flutter pub outdated || true
 
-      - name: Build release AAB (obfuscated)
+      - name: Build release AAB (obfuscated, Play Store)
         run: flutter build appbundle --obfuscate --split-debug-info=build/symbols
+
+      # A universal, sideloadable release APK for development sharing.
+      # Debug-signed so it installs without Play; one file runs on any ABI.
+      - name: Build release APK (universal, sideload)
+        run: flutter build apk --release
+
+      - name: Upload sharable APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: zunga-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error

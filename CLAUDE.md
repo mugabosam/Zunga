@@ -110,6 +110,9 @@ tool/sign_config.dart  dev Ed25519 signer (prod key stays offline)
   not .md files, not GitHub links.
 - "Share the app" shares the **actual APK build** (native `shareApk` via
   FileProvider) during development. At production this becomes a Play Store link.
+  Only ever distribute a **release** APK (`flutter build apk --release`, or the
+  `zunga-release-apk` CI artifact) — a debug APK crashes when sideloaded because
+  it expects the dev/JIT connection.
 - WhatsApp support opens the app (`whatsapp://`, number 0728670972), web fallback.
 
 ## Workflow
